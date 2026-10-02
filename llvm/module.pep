@@ -37,3 +37,5 @@ export * from "context";
 export * from "ir_module";
 export * from "builder";
 export * from "target";
+export * from "debug_info";
+export * from "jit";

@@ -190,3 +190,62 @@ export enum FileKind {
     ## An object file.
     Object = 1,
 }
+
+## The source language a compile unit records (`LLVMDWARFSourceLanguage`).
+## The values are LLVM's enum positions, not DWARF's `DW_LANG_*` codes.
+export enum DwarfLanguage {
+    ## C89.
+    C89 = 0,
+    ## C.
+    C = 1,
+    ## C++.
+    CPlusPlus = 3,
+    ## C99.
+    C99 = 11,
+    ## C++11.
+    CPlusPlus11 = 25,
+    ## Rust.
+    Rust = 27,
+    ## C11.
+    C11 = 28,
+    ## Swift.
+    Swift = 29,
+    ## C++14.
+    CPlusPlus14 = 32,
+    ## Zig.
+    Zig = 38,
+    ## C++17.
+    CPlusPlus17 = 40,
+    ## C++20.
+    CPlusPlus20 = 41,
+    ## C17.
+    C17 = 42,
+}
+
+## How much debug info a compile unit emits (`LLVMDWARFEmissionKind`).
+export enum DebugEmission {
+    ## None.
+    None = 0,
+    ## Types, variables and line tables, for a debugger.
+    Full = 1,
+    ## Line tables only, for stack traces and profilers.
+    LineTablesOnly = 2,
+}
+
+## How a basic type's bits are read (`DW_ATE_*`).
+export enum DwarfEncoding: uint {
+    ## A boolean.
+    Boolean = 2,
+    ## A binary floating-point number.
+    Float = 4,
+    ## A signed integer.
+    Signed = 5,
+    ## A signed character.
+    SignedChar = 6,
+    ## An unsigned integer.
+    Unsigned = 7,
+    ## An unsigned character.
+    UnsignedChar = 8,
+    ## A Unicode character.
+    Utf = 16,
+}

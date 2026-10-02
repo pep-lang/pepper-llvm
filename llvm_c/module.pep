@@ -11,3 +11,5 @@
 export * from "link";
 export * from "core";
 export * from "target";
+export * from "debug_info";
+export * from "orc";

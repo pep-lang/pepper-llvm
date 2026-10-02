@@ -302,11 +302,46 @@ export struct Value {
         llvm_c.LLVMAddCase(ref, on.ref, destination.ref);
     }
 
+    ## Attaches a function's debug info (from `DebugBuilder.function`) to
+    ## its definition.
+    ##
+    ## @param subprogram the function's debug info
+    set_subprogram(subprogram: Metadata) {
+        llvm_c.LLVMSetSubprogram(ref, subprogram.ref);
+    }
+
+    ## Sets an instruction's source location.
+    ##
+    ## @param location the location, from `DebugBuilder.location`
+    set_location(location: Metadata) {
+        llvm_c.LLVMInstructionSetDebugLoc(ref, location.ref);
+    }
+
     ## Checks a function for errors, without printing them.
     ##
     ## @returns true when the function is well formed
     verify_function(): bool {
         return llvm_c.LLVMVerifyFunction(ref, 2) == 0;
+    }
+}
+
+## Debug info metadata (`LLVMMetadataRef`): a file, compile unit,
+## function, type, scope, variable or location, from a `DebugBuilder`.
+[Value]
+export struct Metadata {
+    ## The LLVM-C handle; null for none (such as a `void` return type).
+    var ref: __ptr<void>;
+
+    ## Wraps an LLVM-C metadata handle.
+    ##
+    ## @param ref the `LLVMMetadataRef`, or null
+    construct(this.ref = __null) {}
+
+    ## Reports whether this is the null handle.
+    ##
+    ## @returns true when `ref` is null
+    is_null(): bool {
+        return ref == __null;
     }
 }
 

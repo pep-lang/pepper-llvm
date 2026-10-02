@@ -64,6 +64,19 @@ export struct Builder {
         return BasicBlock(llvm_c.LLVMGetInsertBlock(ref));
     }
 
+    ## Gives the instructions built from now on a source location, until it
+    ## is changed or cleared.
+    ##
+    ## @param location the location, from `DebugBuilder.location`
+    set_location(location: Metadata) {
+        llvm_c.LLVMSetCurrentDebugLocation2(ref, location.ref);
+    }
+
+    ## Stops giving new instructions a source location.
+    clear_location() {
+        llvm_c.LLVMSetCurrentDebugLocation2(ref, __null);
+    }
+
     # Terminators
 
     ## Builds `ret` with a value.

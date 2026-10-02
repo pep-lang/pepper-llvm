@@ -26,6 +26,17 @@ export _take_message(message: __ptr<char>): String {
     return text;
 }
 
+# The message of an LLVMErrorRef, which this consumes; "" for null (success).
+export _take_error(error: __ptr<void>): String {
+    if (error == __null) {
+        return String();
+    }
+    var message = llvm_c.LLVMGetErrorMessage(error);
+    var text = String(message);
+    llvm_c.LLVMDisposeErrorMessage(message);
+    return text;
+}
+
 # Copies a string LLVM owns (a `const char*`), or "" for null.
 export _copy_string(text: __ptr<char>): String {
     if (text == __null) {

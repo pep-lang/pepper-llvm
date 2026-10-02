@@ -18,18 +18,39 @@ import "values";
 ##     var i32 = context.int32_type();
 ##     var answer = i32.const_int(42);   # i32 42
 export struct Context {
+    # Owns the LLVM context, or the ORC thread-safe context that owns it.
     var _handle: Handle<__ptr<void>>;
+    var _ref: __ptr<void>;
+    # The ORC thread-safe context, or null for a plain context.
+    var _thread_safe: __ptr<void>;
 
     ## Creates an empty context.
-    construct() {
-        _handle = Handle<__ptr<void>>(llvm_c.LLVMContextCreate(), (context) => llvm_c.LLVMContextDispose(context));
+    ##
+    ## @param thread_safe whether to make it inside an ORC thread-safe
+    ##   context, which a `Jit` needs for the modules it runs
+    construct(thread_safe: bool = false) {
+        if (thread_safe) {
+            _thread_safe = llvm_c.LLVMOrcCreateNewThreadSafeContext();
+            _ref = llvm_c.LLVMOrcThreadSafeContextGetContext(_thread_safe);
+            _handle = Handle<__ptr<void>>(_thread_safe, (context) => llvm_c.LLVMOrcDisposeThreadSafeContext(context));
+        } else {
+            _ref = llvm_c.LLVMContextCreate();
+            _handle = Handle<__ptr<void>>(_ref, (context) => llvm_c.LLVMContextDispose(context));
+        }
     }
 
     ## The LLVM-C handle, for calls into `llvm_c`.
     var ref: __ptr<void> {
         get {
-            return _handle.value;
+            return _ref;
         }
+    }
+
+    ## Reports whether the context was made for a `Jit` (`thread_safe`).
+    ##
+    ## @returns true for a thread-safe context
+    is_thread_safe(): bool {
+        return _thread_safe != __null;
     }
 
     ## Returns the 1-bit integer type, `i1`, which comparisons produce.

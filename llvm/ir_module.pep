@@ -45,6 +45,14 @@ export struct Module {
         }
     }
 
+    ## Reports whether this wrapper still owns the module: false after it
+    ## was given to a `Jit`, which then owns it.
+    ##
+    ## @returns true while the module can be used
+    is_owned(): bool {
+        return _handle.is_owned();
+    }
+
     ## Returns the module's target triple, or "" when none is set.
     ##
     ## @returns the triple
@@ -182,10 +190,7 @@ export struct Module {
         );
         var error = llvm_c.LLVMRunPasses(ref, _c_string(passes), machine, options.value);
         if (error != __null) {
-            var message = llvm_c.LLVMGetErrorMessage(error);
-            var text = String(message);
-            llvm_c.LLVMDisposeErrorMessage(message);
-            return Result<void>.err(Error(text));
+            return Result<void>.err(Error(_take_error(error)));
         }
         return Result<void>.ok();
     }

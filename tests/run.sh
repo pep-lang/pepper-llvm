@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Runs the package's tests: tests/llvm_test.pep, then the factorial example
+# Runs the package's tests: tests/llvm_test.pep, jit_test.pep and
+# debug_info_test.pep, then the factorial example
 # end to end (generate an object with LLVM, archive it, link it into a
 # Pepper program, run it).
 #
@@ -21,6 +22,11 @@ fi
 cd "$build"
 "$pepper" -I "$root" "${library_dirs[@]}" "$root/tests/llvm_test.pep" -o llvm_test
 ./llvm_test
+
+for test in jit_test debug_info_test; do
+    "$pepper" -I "$root" "${library_dirs[@]}" "$root/tests/$test.pep" -o "$test"
+    ./"$test"
+done
 
 "$pepper" -I "$root" "${library_dirs[@]}" "$root/examples/factorial/generate.pep" -o generate
 ./generate factorial.o
