@@ -5,10 +5,13 @@ import llvm_c;
 import "enums";
 import "ir_module";
 import "support";
+import "symbols";
 import "values";
 
-## Registers the backend for the host's architecture (x86-64 or AArch64),
-## which `TargetMachine` needs. Calling it again does nothing.
+## Registers the backend for the host's architecture (x86-64 or AArch64).
+## `TargetMachine.create` registers every backend itself, so call this
+## only to use `llvm_c` target functions directly. Calling it again does
+## nothing.
 [Target(Arch(x64))]
 export initialize_native_target() {
     llvm_c.LLVMInitializeX86TargetInfo();
@@ -17,14 +20,115 @@ export initialize_native_target() {
     llvm_c.LLVMInitializeX86AsmPrinter();
 }
 
-## Registers the backend for the host's architecture (x86-64 or AArch64),
-## which `TargetMachine` needs. Calling it again does nothing.
+## Registers the backend for the host's architecture (x86-64 or AArch64).
+## `TargetMachine.create` registers every backend itself, so call this
+## only to use `llvm_c` target functions directly. Calling it again does
+## nothing.
 [Target(Arch(aarch64))]
 export initialize_native_target() {
     llvm_c.LLVMInitializeAArch64TargetInfo();
     llvm_c.LLVMInitializeAArch64Target();
     llvm_c.LLVMInitializeAArch64TargetMC();
     llvm_c.LLVMInitializeAArch64AsmPrinter();
+}
+
+## Returns the names of the backends LLVM 20 can be built with, as
+## `initialize_target` takes them. A given LLVM build has some of them;
+## the official builds and Linux distributions' have all but the
+## experimental ones.
+##
+## @returns the backend names
+export known_backends(): String[] {
+    return [
+        "AArch64",
+        "AMDGPU",
+        "ARC",
+        "ARM",
+        "AVR",
+        "BPF",
+        "CSKY",
+        "DirectX",
+        "Hexagon",
+        "Lanai",
+        "LoongArch",
+        "M68k",
+        "Mips",
+        "MSP430",
+        "NVPTX",
+        "PowerPC",
+        "RISCV",
+        "Sparc",
+        "SPIRV",
+        "SystemZ",
+        "VE",
+        "WebAssembly",
+        "X86",
+        "XCore",
+        "Xtensa",
+    ];
+}
+
+## Registers one backend, so target machines for its triples can be made:
+## `ARM` covers `armv7-*` and `thumbv7em-*`, `RISCV` covers `riscv32-*` and
+## `riscv64-*`, `WebAssembly` covers `wasm32-*`, and so on. Calling it
+## again does nothing.
+##
+## @param name the backend's name, as `known_backends()` lists it
+## @returns Ok, or an Err when the LLVM library was built without that backend
+## @example
+##     llvm.initialize_target("RISCV").value();
+##     var machine = llvm.TargetMachine.create("riscv64-unknown-linux-gnu").value();
+export initialize_target(name: String): Result<void> {
+    # TargetInfo, Target and TargetMC make the backend; the assembly
+    # printer (object emission) and parser are there for nearly every one.
+    var required = ["TargetInfo", "Target", "TargetMC"];
+    var functions = Array<__ptr<void>>();
+    for (var part in required) {
+        var function = _llvm_symbol($"LLVMInitialize{name}{part}");
+        if (function == __null) {
+            return Result<void>.err(Error($"the LLVM library has no '{name}' backend"));
+        }
+        functions.append(function);
+    }
+    for (var part in ["AsmPrinter", "AsmParser"]) {
+        var function = _llvm_symbol($"LLVMInitialize{name}{part}");
+        if (function != __null) {
+            functions.append(function);
+        }
+    }
+    for (var function in functions) {
+        var initialize = function as extern () => void;
+        initialize();
+    }
+    return Result<void>.ok();
+}
+
+## Registers every backend the LLVM library was built with.
+##
+## @returns the names of the backends registered, from `known_backends()`
+export initialize_all_targets(): String[] {
+    var registered = Array<String>();
+    for (var name in known_backends()) {
+        if (initialize_target(name).is_ok()) {
+            registered.append(name);
+        }
+    }
+    return registered;
+}
+
+## Returns the short names of the registered targets, as LLVM spells them
+## in triples and `-march` (`x86-64`, `aarch64`, `riscv64`, `wasm32`, ...).
+## One backend registers several (`X86` registers `x86` and `x86-64`).
+##
+## @returns the target names
+export registered_targets(): String[] {
+    var names = Array<String>();
+    var target = llvm_c.LLVMGetFirstTarget();
+    while (target != __null) {
+        names.append(_copy_string(llvm_c.LLVMGetTargetName(target)));
+        target = llvm_c.LLVMGetNextTarget(target);
+    }
+    return names;
 }
 
 ## Returns the host's target triple, such as `x86_64-pc-linux-gnu`.
@@ -86,7 +190,7 @@ export struct TargetMachine {
     }
 
     ## Creates a target machine for the host: its triple, CPU and CPU
-    ## features. Registers the host's backend first.
+    ## features.
     ##
     ## @param level how hard code generation optimizes
     ## @param reloc how code addresses itself; position-independent by default, as for PIE executables
@@ -95,12 +199,14 @@ export struct TargetMachine {
     static host(
         level: OptLevel = OptLevel.O2, reloc: RelocMode = RelocMode.Pic, code_model: CodeModel = CodeModel.Default
     ): Result<TargetMachine> {
-        initialize_native_target();
         return create(default_triple(), host_cpu(), host_features(), level, reloc, code_model);
     }
 
-    ## Creates a target machine for a triple. Register its backend first
-    ## (`initialize_native_target` for the host's).
+    ## Creates a target machine for any triple a backend of the LLVM
+    ## library handles, such as `aarch64-apple-darwin`,
+    ## `riscv64-unknown-linux-gnu`, `wasm32-unknown-unknown` or
+    ## `x86_64-pc-windows-msvc`. Registers every backend first
+    ## (`initialize_all_targets`).
     ##
     ## @param triple the target triple, such as `aarch64-apple-darwin`
     ## @param cpu the CPU name; empty for the target's generic CPU
@@ -117,6 +223,7 @@ export struct TargetMachine {
         reloc: RelocMode = RelocMode.Pic,
         code_model: CodeModel = CodeModel.Default
     ): Result<TargetMachine> {
+        initialize_all_targets();
         var target = _OutPointer();
         var message = _OutPointer();
         if (llvm_c.LLVMGetTargetFromTriple(_c_string(triple), target.data(), message.data() as __ptr<__ptr<char>>)

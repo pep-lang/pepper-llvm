@@ -3,7 +3,8 @@
 ##
 ## A `Context` owns types and constants; a `Module` holds functions and
 ## globals; a `Builder` appends instructions to a function's blocks; a
-## `TargetMachine` optimizes a module and compiles it to an object file.
+## `TargetMachine` optimizes a module and compiles it to an object file,
+## for the host or any triple a backend of the LLVM library handles.
 ## Those four free their LLVM object when the last reference goes away
 ## (each holds a `Handle`). `Type`, `Value`, `BasicBlock` and `Attribute`
 ## are plain handles, valid while their context and module are alive.

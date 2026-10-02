@@ -81,14 +81,18 @@ runs `tests/llvm_test.pep` and the factorial example end to end.
 - **Ownership**: wrappers hold a `Handle<__ptr<void>>`; a `Module` or
   `Builder` holds its `Context` and releases its own handle first in its
   destructor, so the context always outlives them.
-- **Backends**: `initialize_native_target()` registers the host's (x86-64 or
-  AArch64) only, since `LLVMInitializeNativeTarget` is a header inline that
-  cannot be bound.
+- **Every backend**: `TargetMachine.create(triple)` takes any triple the
+  library has a backend for (`riscv64-unknown-linux-gnu`,
+  `arm64-apple-macosx14.0.0`, `wasm32-unknown-unknown`,
+  `x86_64-pc-windows-msvc`, ...). Which backends exist depends on how LLVM
+  was built, so their `LLVMInitialize<Name>*` functions are looked up at run
+  time (`dlsym`, `GetProcAddress`) rather than declared, and
+  `initialize_target(name)` reports a missing one as an error.
 
 ## Not yet covered
 
 - Debug info (`DIBuilder`, for justinboswell/pepper#218).
-- ORC JIT, intrinsics lookup, metadata, inline assembly, atomics, exception
-  handling, and cross-compilation backends beyond the host's.
+- ORC JIT, intrinsics lookup, metadata, inline assembly, atomics and
+  exception handling.
 - A CI workflow. So far the tests have run on Linux x64 only; macOS and
   Windows linking follow the table above but are untested.

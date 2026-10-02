@@ -40,6 +40,29 @@ make_module(): llvm.Module {
     return module;
 }
 
+# Compiles `int seven() { return 7; }` for `triple` and returns the object
+# file's first four bytes, or an empty array when LLVM has no `backend`.
+cross_compile(backend: String, triple: String): u8[] {
+    if (llvm.initialize_target(backend).is_err()) {
+        return Array<u8>();
+    }
+    var context = llvm.Context();
+    var module = llvm.Module(context, "cross");
+    var i32 = context.int32_type();
+    var function = module.add_function("seven", llvm.Type.function(i32, Array<llvm.Type>()));
+    var builder = llvm.Builder(context);
+    builder.position_at_end(context.append_block(function, "entry"));
+    builder.return_value(i32.const_int(7));
+    var machine = llvm.TargetMachine.create(triple).value();
+    machine.configure(module);
+    var object = machine.emit_to_memory(module).value();
+    var head = Array<u8>();
+    for (var index in 0..4) {
+        head.append(object[index]);
+    }
+    return head;
+}
+
 main(): int {
     var context = llvm.Context();
     var module = llvm.Module(context, "test");
@@ -158,6 +181,34 @@ main(): int {
     var kept = make_module();
     if (!kept.verify().is_ok() || !kept.to_string().contains("ret i64 7")) {
         return 20;
+    }
+
+    # Any backend the library has, not only the host's.
+    if (llvm.initialize_target("NoSuchBackend").is_ok()) {
+        return 22;
+    }
+    var registered = llvm.initialize_all_targets();
+    if (!registered.contains("X86") && !registered.contains("AArch64")) {
+        return 23;
+    }
+    if (!llvm.registered_targets().contains("x86-64") && !llvm.registered_targets().contains("aarch64")) {
+        return 24;
+    }
+    var riscv = cross_compile("RISCV", "riscv64-unknown-linux-gnu");
+    if (riscv.count > 0 && (riscv[0] != 0x7F || riscv[1] != 'E' as u8)) {
+        return 25;
+    }
+    var mac = cross_compile("AArch64", "arm64-apple-macosx14.0.0");
+    if (mac.count > 0 && (mac[0] != 0xCF || mac[1] != 0xFA)) {
+        return 26;
+    }
+    var windows = cross_compile("X86", "x86_64-pc-windows-msvc");
+    if (windows.count > 0 && (windows[0] != 0x64 || windows[1] != 0x86)) {
+        return 27;
+    }
+    var wasm = cross_compile("WebAssembly", "wasm32-unknown-unknown");
+    if (wasm.count > 0 && (wasm[0] != 0 || wasm[1] != 'a' as u8 || wasm[2] != 's' as u8 || wasm[3] != 'm' as u8)) {
+        return 28;
     }
 
     if (llvm.version().split(".").count != 3 || llvm.default_triple().size == 0) {

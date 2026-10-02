@@ -3,9 +3,11 @@
 ## backend, target machines, object emission, data layouts and the
 ## optimization pipeline.
 ##
-## LLVM's `LLVMInitializeNativeTarget` is an inline function in its header,
-## so it cannot be bound; call the four `LLVMInitialize<Arch>*` functions of
-## the host's architecture instead (`llvm.initialize_native_target()` does).
+## LLVM's `LLVMInitializeNativeTarget` and `LLVMInitializeAll*` are inline
+## functions in its headers, so they cannot be bound. The host's backend is
+## declared here; every other backend's `LLVMInitialize<Name>*` functions
+## exist only when LLVM was built with that backend, so `llvm` looks them
+## up at run time instead (`llvm.initialize_target`).
 
 # Backends
 
@@ -42,6 +44,30 @@ export extern void LLVMInitializeAArch64TargetMC();
 export extern void LLVMInitializeAArch64AsmPrinter();
 
 # Hosts and targets
+
+## Returns the first registered target, or null when none is registered.
+##
+## @returns the target
+export extern void* LLVMGetFirstTarget();
+
+## Returns the registered target after `target`, or null after the last.
+##
+## @param target a target
+## @returns the next target
+export extern void* LLVMGetNextTarget(void* target);
+
+## Returns a target's short name, such as `x86-64` or `riscv64`; LLVM owns
+## the string.
+##
+## @param target the target
+## @returns the name
+export extern char* LLVMGetTargetName(void* target);
+
+## Returns a target's description; LLVM owns the string.
+##
+## @param target the target
+## @returns the description
+export extern char* LLVMGetTargetDescription(void* target);
 
 ## Returns the host's target triple; free it with `LLVMDisposeMessage`.
 ##
