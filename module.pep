@@ -9,7 +9,7 @@
 ## (each holds a `Handle`). `Type`, `Value`, `BasicBlock` and `Attribute`
 ## are plain handles, valid while their context and module are alive.
 ##
-## For what the wrappers do not cover, the `llvm_c` module declares the C
+## For what the wrappers do not cover, the `llvm.llvm_c` module declares the C
 ## functions themselves; every wrapper exposes its LLVM-C handle as `ref`.
 ##
 ## @example

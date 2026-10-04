@@ -1,8 +1,8 @@
 ## `Builder`: appends instructions to a basic block.
 
-import llvm_c;
 import "context";
 import "enums";
+import "llvm_c" as llvm_c;
 import "support";
 import "values";
 

@@ -1,9 +1,9 @@
 ## Targets: registering the host's backend, `TargetMachine`, and compiling
 ## a module to an object file.
 
-import llvm_c;
 import "enums";
 import "ir_module";
+import "llvm_c" as llvm_c;
 import "support";
 import "symbols";
 import "values";
@@ -158,7 +158,7 @@ export host_features(): String {
 ## @returns the version
 export version(): String {
     var parts = _RefArray(2);
-    var numbers = parts.data() as __ptr<uint>;
+    var numbers = unsafe_cast<__ptr<uint>>(parts.data());
     llvm_c.LLVMGetVersion(numbers, numbers + 1, numbers + 2);
     return $"{numbers[0]}.{numbers[1]}.{numbers[2]}";
 }
@@ -226,7 +226,9 @@ export struct TargetMachine {
         initialize_all_targets();
         var target = _OutPointer();
         var message = _OutPointer();
-        if (llvm_c.LLVMGetTargetFromTriple(_c_string(triple), target.data(), message.data() as __ptr<__ptr<char>>)
+        if (llvm_c.LLVMGetTargetFromTriple(
+            _c_string(triple), target.data(), unsafe_cast<__ptr<__ptr<char>>>(message.data())
+        )
             != 0) {
             return Result<TargetMachine>.err(Error(_take_message(message.get() as __ptr<char>)));
         }
@@ -310,7 +312,7 @@ export struct TargetMachine {
     emit_to_file(module: Module, path: String, kind: FileKind = FileKind.Object): Result<void> {
         var message = _OutPointer();
         if (llvm_c.LLVMTargetMachineEmitToFile(
-            ref, module.ref, _c_string(path), kind as int, message.data() as __ptr<__ptr<char>>
+            ref, module.ref, _c_string(path), kind as int, unsafe_cast<__ptr<__ptr<char>>>(message.data())
         )
             != 0) {
             return Result<void>.err(Error(_take_message(message.get() as __ptr<char>)));
@@ -327,13 +329,13 @@ export struct TargetMachine {
         var message = _OutPointer();
         var buffer = _OutPointer();
         if (llvm_c.LLVMTargetMachineEmitToMemoryBuffer(
-            ref, module.ref, kind as int, message.data() as __ptr<__ptr<char>>, buffer.data()
+            ref, module.ref, kind as int, unsafe_cast<__ptr<__ptr<char>>>(message.data()), buffer.data()
         )
             != 0) {
             return Result<u8[]>.err(Error(_take_message(message.get() as __ptr<char>)));
         }
         var owned = Handle<__ptr<void>>(buffer.get(), (memory) => llvm_c.LLVMDisposeMemoryBuffer(memory));
-        var start = llvm_c.LLVMGetBufferStart(owned.value) as __ptr<u8>;
+        var start = unsafe_cast<__ptr<u8>>(llvm_c.LLVMGetBufferStart(owned.value));
         var size = llvm_c.LLVMGetBufferSize(owned.value);
         var bytes = Array<u8>(size);
         for (var index in 0..size) {

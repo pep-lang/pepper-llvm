@@ -2,9 +2,9 @@
 ## so debuggers can map machine code back to source lines, functions,
 ## types and variables.
 
-import llvm_c;
 import "enums";
 import "ir_module";
+import "llvm_c" as llvm_c;
 import "support";
 import "values";
 

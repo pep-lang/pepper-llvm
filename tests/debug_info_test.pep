@@ -3,7 +3,8 @@
 
 import llvm;
 
-main(): int {
+[Test]
+functions_carry_debug_info() {
     var context = llvm.Context();
     var module = llvm.Module(context, "debug");
     var machine = llvm.TargetMachine.host(llvm.OptLevel.O0).value();
@@ -18,9 +19,8 @@ main(): int {
     var point_x = debug.member_type(file, "x", file, 1, 32, 32, 0, int_type);
     var point_y = debug.member_type(file, "y", file, 1, 32, 32, 32, int_type);
     var point = debug.struct_type(unit, "Point", file, 1, 64, 32, [point_x, point_y]);
-    if (int_pointer.is_null() || point.is_null()) {
-        return 1;
-    }
+    expect_false(int_pointer.is_null());
+    expect_false(point.is_null());
 
     # int twice(int value) {   // line 3
     #     int result = value * 2;   // line 4
@@ -57,8 +57,8 @@ main(): int {
     var verified = module.verify();
     if (verified.is_err()) {
         print(verified.error().message);
-        return 2;
     }
+    expect_true(verified.is_ok());
     var text = module.to_string();
     var expected = [
         "!DICompileUnit(language: DW_LANG_C",
@@ -75,14 +75,11 @@ main(): int {
         if (!text.contains(line)) {
             print($"missing: {line}");
             print(text);
-            return 3;
         }
+        expect_true(text.contains(line));
     }
 
     # The object carries the debug sections.
     var assembly = String._from_bytes(machine.emit_to_memory(module, llvm.FileKind.Assembly).value());
-    if (!assembly.contains(".debug_info") && !assembly.contains("__debug_info") && !assembly.contains(".debug$S")) {
-        return 4;
-    }
-    return 0;
+    expect_true(assembly.contains(".debug_info") || assembly.contains("__debug_info") || assembly.contains(".debug$S"));
 }

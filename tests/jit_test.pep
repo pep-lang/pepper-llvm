@@ -2,16 +2,14 @@
 
 import llvm;
 
-main(): int {
+[Test]
+the_jit_runs_compiled_functions() {
     var jit = llvm.Jit.create().value();
-    if (jit.triple().size == 0 || jit.data_layout().size == 0) {
-        return 1;
-    }
+    expect_true(jit.triple().size > 0);
+    expect_true(jit.data_layout().size > 0);
 
     var context = llvm.Context(thread_safe = true);
-    if (!context.is_thread_safe()) {
-        return 2;
-    }
+    expect_true(context.is_thread_safe());
     var module = llvm.Module(context, "jitted");
     var i32 = context.int32_type();
     var i64 = context.int64_type();
@@ -30,34 +28,22 @@ main(): int {
     builder.position_at_end(context.append_block(length, "entry"));
     builder.return_value(builder.call(strlen_type, strlen, [length.param(0)], "n"));
 
-    if (!module.verify().is_ok()) {
-        return 3;
-    }
-    if (!jit.add_module(module).is_ok() || module.is_owned()) {
-        return 4;
-    }
+    expect_true(module.verify().is_ok());
+    expect_true(jit.add_module(module).is_ok());
+    expect_false(module.is_owned());
 
     var add_function = jit.lookup("add").value() as extern (int, int) => int;
-    if (add_function(2, 3) != 5) {
-        return 5;
-    }
+    expect_equal(add_function(2, 3), 5);
     var length_function = jit.lookup("length").value() as extern (__ptr<char>) => long;
     var text = "hello";
-    var got = length_function(text.c_str());
-    if (got != 5) {
-        print($"length: {got}");
-        return 6;
-    }
-    if (jit.lookup("missing").is_ok()) {
-        return 7;
-    }
+    expect_equal(length_function(text.c_str()), 5 as long);
+    expect_true(jit.lookup("missing").is_err());
 
     # A module from a plain context is refused, not a crash.
     var plain = llvm.Context();
     var refused = jit.add_module(llvm.Module(plain, "plain"));
-    if (refused.is_ok() || !refused.error().message.contains("thread_safe")) {
-        return 8;
-    }
+    expect_true(refused.is_err());
+    expect_true(refused.error().message.contains("thread_safe"));
 
     # A second module can call the first one's function.
     var second = llvm.Module(context, "second");
@@ -73,8 +59,5 @@ main(): int {
     );
     jit.add_module(second).value();
     var triple_function = jit.lookup("triple").value() as extern (int) => int;
-    if (triple_function(14) != 42) {
-        return 9;
-    }
-    return 0;
+    expect_equal(triple_function(14), 42);
 }

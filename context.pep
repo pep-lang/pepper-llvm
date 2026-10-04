@@ -1,7 +1,7 @@
 ## `Context`: owns LLVM's types and constants, and makes the types, blocks
 ## and attributes of everything built in it.
 
-import llvm_c;
+import "llvm_c" as llvm_c;
 import "support";
 import "values";
 

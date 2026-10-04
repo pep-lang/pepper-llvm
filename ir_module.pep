@@ -1,8 +1,8 @@
 ## `Module`: a unit of LLVM IR (functions and globals) that is verified,
 ## optimized and compiled to an object file.
 
-import llvm_c;
 import "context";
+import "llvm_c" as llvm_c;
 import "support";
 import "target";
 import "values";
@@ -112,9 +112,9 @@ export struct Module {
     function(name: String): Value? {
         var found = llvm_c.LLVMGetNamedFunction(ref, _c_string(name));
         if (found == __null) {
-            return Optional<Value>.none();
+            return Optional<Value>.Empty;
         }
-        return Optional<Value>.some(Value(found));
+        return Optional<Value>.Value(Value(found));
     }
 
     ## Adds a global variable, with no initializer until one is set.
@@ -133,9 +133,9 @@ export struct Module {
     global(name: String): Value? {
         var found = llvm_c.LLVMGetNamedGlobal(ref, _c_string(name));
         if (found == __null) {
-            return Optional<Value>.none();
+            return Optional<Value>.Empty;
         }
-        return Optional<Value>.some(Value(found));
+        return Optional<Value>.Value(Value(found));
     }
 
     ## Checks the module for errors, such as a block with no terminator or
@@ -144,7 +144,7 @@ export struct Module {
     ## @returns Ok when the module is well formed, else an Err with LLVM's description of every problem
     verify(): Result<void> {
         var message = _OutPointer();
-        var broken = llvm_c.LLVMVerifyModule(ref, 2, message.data() as __ptr<__ptr<char>>);
+        var broken = llvm_c.LLVMVerifyModule(ref, 2, unsafe_cast<__ptr<__ptr<char>>>(message.data()));
         var text = _take_message(message.get() as __ptr<char>);
         if (broken != 0) {
             return Result<void>.err(Error(text.trim()));

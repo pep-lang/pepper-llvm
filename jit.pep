@@ -1,9 +1,9 @@
 ## `Jit`: compiles modules in memory and returns the addresses of their
 ## functions, to call from the running program.
 
-import llvm_c;
 import "context";
 import "ir_module";
+import "llvm_c" as llvm_c;
 import "support";
 import "target";
 
@@ -114,7 +114,7 @@ export struct Jit {
     ## @returns the address, or an Err when no added module or the program defines `name`
     lookup(name: String): Result<__ptr<void>> {
         var address = _RefArray(1);
-        var error = llvm_c.LLVMOrcLLJITLookup(ref, address.data() as __ptr<ulong>, _c_string(name));
+        var error = llvm_c.LLVMOrcLLJITLookup(ref, unsafe_cast<__ptr<ulong>>(address.data()), _c_string(name));
         if (error != __null) {
             return Result<__ptr<void>>.err(Error(_take_error(error)));
         }

@@ -2,7 +2,7 @@
 # handles. Exported to the module's files only (module.pep does not
 # re-export them).
 
-import llvm_c;
+import "llvm_c" as llvm_c;
 
 extern void* malloc(ulong size);
 extern void free(void* p);

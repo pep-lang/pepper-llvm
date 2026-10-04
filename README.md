@@ -6,14 +6,15 @@ LLVM IR, optimize it and emit object files.
 
 Two modules:
 
-- **`llvm`**: Pepper types over LLVM. `Context`, `Module`, `Builder`,
-  `TargetMachine`, `DebugBuilder` and `Jit` free their LLVM object when the last reference goes away
-  (each holds a runtime `Handle<T>`); `Type`, `Value`, `BasicBlock` and
-  `Attribute` are plain value handles, valid while their context and module
-  live.
-- **`llvm_c`**: the raw `extern` declarations, one per LLVM-C function, with
-  LLVM's names and C's types. Use it for anything `llvm` does not wrap yet;
-  every wrapper exposes its LLVM-C pointer as `ref`.
+- **`llvm`** (the package's root): Pepper types over LLVM. `Context`,
+  `Module`, `Builder`, `TargetMachine`, `DebugBuilder` and `Jit` free their
+  LLVM object when the last reference goes away (each holds a runtime
+  `Handle<T>`); `Type`, `Value`, `BasicBlock` and `Attribute` are plain
+  value handles, valid while their context and module live.
+- **`llvm.llvm_c`** (the `llvm_c` folder): the raw `extern` declarations,
+  one per LLVM-C function, with LLVM's names and C's types. Use it for
+  anything `llvm` does not wrap yet; every wrapper exposes its LLVM-C
+  pointer as `ref`.
 
 ```pepper
 import llvm;
@@ -41,12 +42,21 @@ file, and links it into a second Pepper program.
 
 ## Using it
 
-Until the package manager (justinboswell/pepper#217) exists, put this
-repository on the import path:
+Add it to a project's `pep.toml`:
 
-```sh
-pepper -I path/to/pepper-llvm main.pep -o main
+```toml
+[dependencies]
+llvm = { github = "justinboswell/pepper-llvm", branch = "main" }
 ```
+
+```pepper
+import llvm;
+import llvm.llvm_c;     # only for functions the wrappers do not cover
+```
+
+Without a `pep.toml`, put a folder named `llvm` holding this repository
+on the import path (`pepper build -I packages main.pep`, with
+`packages/llvm` a checkout or a link to one).
 
 Importing either module links LLVM 20, the version the Pepper compiler
 builds with:
@@ -66,8 +76,9 @@ the `Handle<T>` the wrappers are built on.
 tests/run.sh path/to/pepper
 ```
 
-runs `tests/llvm_test.pep`, `tests/jit_test.pep`,
-`tests/debug_info_test.pep` and the factorial example end to end.
+runs the `[Test]` functions in `tests/` with `pepper test`
+(`llvm_test.pep`, `jit_test.pep`, `debug_info_test.pep`), then the
+factorial example end to end.
 
 ## Decisions (from the open questions in #249)
 

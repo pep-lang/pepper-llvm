@@ -6,8 +6,8 @@
 ## global or instruction, the `Module`) it came from is alive, so keep those
 ## alive while you use them.
 
-import llvm_c;
 import "enums";
+import "llvm_c" as llvm_c;
 import "support";
 
 ## An LLVM type (`LLVMTypeRef`). Get one from a `Context` (`int32_type()`,
@@ -186,8 +186,8 @@ export struct Value {
     ## @returns the name
     name(): String {
         var length = _RefArray(1);
-        var text = llvm_c.LLVMGetValueName2(ref, length.data() as __ptr<ulong>);
-        return String(text, length.data()[0] as ulong);
+        var text = llvm_c.LLVMGetValueName2(ref, unsafe_cast<__ptr<ulong>>(length.data()));
+        return String(text, unsafe_cast<ulong>(length.data()[0]));
     }
 
     ## Names the value; LLVM adds a number when the name is taken.
