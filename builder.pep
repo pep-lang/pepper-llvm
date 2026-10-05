@@ -643,4 +643,147 @@ export struct Builder {
     phi(value_type: Type, name: String = ""): Value {
         return Value(llvm_c.LLVMBuildPhi(ref, value_type.ref, _c_string(name)));
     }
+
+    # Inserting elsewhere, memory and vectors
+
+    ## Makes later instructions go just before `instruction`.
+    ##
+    ## @param instruction the instruction to insert before
+    position_before(instruction: Value) {
+        llvm_c.LLVMPositionBuilderBefore(ref, instruction.ref);
+    }
+
+    ## Builds `atomicrmw`.
+    ##
+    ## @param op the operation (`LLVMAtomicRMWBinOp`: 0 xchg, 1 add, 2 sub, 3 and, 4 nand, 5 or, 6 xor, 7 max, 8 min, 9 umax, 10 umin)
+    ## @param pointer the address
+    ## @param value the operand
+    ## @param ordering the ordering (`LLVMAtomicOrdering`: 2 monotonic, 4 acquire, 5 release, 6 acq_rel, 7 seq_cst)
+    ## @returns the old value
+    atomic_rmw(op: int, pointer: Value, value: Value, ordering: int): Value {
+        return Value(llvm_c.LLVMBuildAtomicRMW(ref, op, pointer.ref, value.ref, ordering, 0));
+    }
+
+    ## Builds `cmpxchg`.
+    ##
+    ## @param pointer the address
+    ## @param expected the value expected there
+    ## @param replacement the value to store
+    ## @param success the ordering on success
+    ## @param failure the ordering on failure
+    ## @returns the `{ old, succeeded }` pair
+    compare_exchange(pointer: Value, expected: Value, replacement: Value, success: int, failure: int): Value {
+        return Value(
+            llvm_c.LLVMBuildAtomicCmpXchg(ref, pointer.ref, expected.ref, replacement.ref, success, failure, 0)
+        );
+    }
+
+    ## Builds `fence`.
+    ##
+    ## @param ordering the ordering
+    ## @param name the result's name
+    ## @returns the instruction
+    fence(ordering: int, name: String = ""): Value {
+        return Value(llvm_c.LLVMBuildFence(ref, ordering, 0, _c_string(name)));
+    }
+
+    ## Builds a call to `llvm.memcpy`.
+    ##
+    ## @param destination the destination
+    ## @param destination_align its alignment
+    ## @param source the source
+    ## @param source_align its alignment
+    ## @param size the byte count
+    ## @returns the call
+    memory_copy(destination: Value, destination_align: uint, source: Value, source_align: uint, size: Value): Value {
+        return Value(
+            llvm_c.LLVMBuildMemCpy(ref, destination.ref, destination_align, source.ref, source_align, size.ref)
+        );
+    }
+
+    ## Builds a call to `llvm.memmove`.
+    ##
+    ## @param destination the destination
+    ## @param destination_align its alignment
+    ## @param source the source
+    ## @param source_align its alignment
+    ## @param size the byte count
+    ## @returns the call
+    memory_move(destination: Value, destination_align: uint, source: Value, source_align: uint, size: Value): Value {
+        return Value(
+            llvm_c.LLVMBuildMemMove(ref, destination.ref, destination_align, source.ref, source_align, size.ref)
+        );
+    }
+
+    ## Builds a call to `llvm.memset`.
+    ##
+    ## @param pointer the destination
+    ## @param value the byte
+    ## @param length the byte count
+    ## @param align the destination's alignment
+    ## @returns the call
+    memory_set(pointer: Value, value: Value, length: Value, align: uint): Value {
+        return Value(llvm_c.LLVMBuildMemSet(ref, pointer.ref, value.ref, length.ref, align));
+    }
+
+    ## Builds `extractelement`.
+    ##
+    ## @param vector the vector
+    ## @param index the lane
+    ## @param name the result's name
+    ## @returns the lane's value
+    extract_element(vector: Value, index: Value, name: String = ""): Value {
+        return Value(llvm_c.LLVMBuildExtractElement(ref, vector.ref, index.ref, _c_string(name)));
+    }
+
+    ## Builds `insertelement`.
+    ##
+    ## @param vector the vector
+    ## @param element the new lane value
+    ## @param index the lane
+    ## @param name the result's name
+    ## @returns the new vector
+    insert_element(vector: Value, element: Value, index: Value, name: String = ""): Value {
+        return Value(llvm_c.LLVMBuildInsertElement(ref, vector.ref, element.ref, index.ref, _c_string(name)));
+    }
+
+    ## Builds `shufflevector`.
+    ##
+    ## @param left the first vector
+    ## @param right the second vector
+    ## @param mask the constant lane mask
+    ## @param name the result's name
+    ## @returns the new vector
+    shuffle_vector(left: Value, right: Value, mask: Value, name: String = ""): Value {
+        return Value(llvm_c.LLVMBuildShuffleVector(ref, left.ref, right.ref, mask.ref, _c_string(name)));
+    }
+
+    ## Builds a test that a pointer is null.
+    ##
+    ## @param value the pointer
+    ## @param name the result's name
+    ## @returns an `i1`
+    is_null(value: Value, name: String = ""): Value {
+        return Value(llvm_c.LLVMBuildIsNull(ref, value.ref, _c_string(name)));
+    }
+
+    ## Builds a test that a pointer is not null.
+    ##
+    ## @param value the pointer
+    ## @param name the result's name
+    ## @returns an `i1`
+    is_not_null(value: Value, name: String = ""): Value {
+        return Value(llvm_c.LLVMBuildIsNotNull(ref, value.ref, _c_string(name)));
+    }
+
+    ## Builds a signed integer cast: truncates or sign-extends `value` to
+    ## `value_type`, or returns it when it already has that type.
+    ##
+    ## @param value the integer
+    ## @param value_type the integer type
+    ## @param name the result's name
+    ## @returns the result
+    int_cast(value: Value, value_type: Type, name: String = ""): Value {
+        return Value(llvm_c.LLVMBuildIntCast(ref, value.ref, value_type.ref, _c_string(name)));
+    }
 }

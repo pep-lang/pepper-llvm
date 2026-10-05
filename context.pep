@@ -183,4 +183,96 @@ export struct Context {
         assert(kind != 0, $"Context.attribute: no attribute named '{name}'");
         return Attribute(llvm_c.LLVMCreateEnumAttribute(ref, kind, value));
     }
+
+    ## Returns a string attribute (`"key"="value"`), such as `target-cpu`.
+    ##
+    ## @param key the attribute's key
+    ## @param value the attribute's value
+    ## @returns the attribute
+    string_attribute(key: String, value: String): Attribute {
+        return Attribute(
+            llvm_c.LLVMCreateStringAttribute(
+                ref, _c_string(key), key.size as uint, _c_string(value), value.size as uint
+            )
+        );
+    }
+
+    ## Creates a block and inserts it before `before`.
+    ##
+    ## @param before the block to insert before
+    ## @param name the block's name
+    ## @returns the new block
+    insert_block(before: BasicBlock, name: String = ""): BasicBlock {
+        return BasicBlock(llvm_c.LLVMInsertBasicBlockInContext(ref, before.ref, _c_string(name)));
+    }
+
+    ## Returns the kind of metadata named `name`, such as `tbaa`.
+    ##
+    ## @param name the kind's name
+    ## @returns the kind
+    metadata_kind(name: String): uint {
+        return llvm_c.LLVMGetMDKindIDInContext(ref, _c_string(name), name.size as uint);
+    }
+
+    ## Returns a metadata string.
+    ##
+    ## @param text the string
+    ## @returns the metadata
+    metadata_string(text: String): Metadata {
+        return Metadata(llvm_c.LLVMMDStringInContext2(ref, _c_string(text), text.size));
+    }
+
+    ## Returns a metadata tuple (`!{...}`).
+    ##
+    ## @param operands the operands
+    ## @returns the metadata
+    metadata_node(operands: Metadata[]): Metadata {
+        var refs = _RefArray(operands.count);
+        for (var index in 0..operands.count) {
+            refs.set(index, operands[index].ref);
+        }
+        return Metadata(llvm_c.LLVMMDNodeInContext2(ref, refs.data(), refs.count as ulong));
+    }
+
+    ## Wraps metadata as a value, for `Value.set_metadata`.
+    ##
+    ## @param metadata the metadata
+    ## @returns the value
+    metadata_value(metadata: Metadata): Value {
+        return Value(llvm_c.LLVMMetadataAsValue(ref, metadata.ref));
+    }
+
+    ## Wraps a constant as metadata.
+    ##
+    ## @param value the constant
+    ## @returns the metadata
+    constant_metadata(value: Value): Metadata {
+        return Metadata(llvm_c.LLVMValueAsMetadata(value.ref));
+    }
+
+    ## Returns inline assembly in AT&T syntax that cannot unwind.
+    ##
+    ## @param function_type the assembly's function type
+    ## @param assembly the assembly text
+    ## @param constraints the operand constraints
+    ## @param side_effects whether it has side effects
+    ## @param align_stack whether it needs an aligned stack
+    ## @returns the value to call
+    inline_asm(
+        function_type: Type, assembly: String, constraints: String, side_effects: bool, align_stack: bool
+    ): Value {
+        return Value(
+            llvm_c.LLVMGetInlineAsm(
+                function_type.ref,
+                _c_string(assembly),
+                assembly.size,
+                _c_string(constraints),
+                constraints.size,
+                side_effects ? 1 : 0,
+                align_stack ? 1 : 0,
+                0,
+                0
+            )
+        );
+    }
 }

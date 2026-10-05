@@ -744,3 +744,593 @@ export extern void* LLVMBuildInsertValue(void* builder, void* aggregate, void* e
 ## @param name the global's name
 ## @returns the global
 export extern void* LLVMBuildGlobalString(void* builder, char* text, char* name);
+
+# Inspecting and editing IR
+
+## Creates a string attribute (`"key"="value"`).
+##
+## @param context the context that owns the attribute
+## @param key the attribute's key
+## @param key_length the key's length in bytes
+## @param value the attribute's value
+## @param value_length the value's length in bytes
+## @returns the attribute
+export extern void* LLVMCreateStringAttribute(
+    void* context, char* key, uint key_length, char* value, uint value_length
+);
+
+## Returns the type of a global's value (a function's function type).
+##
+## @param global the function or global variable
+## @returns its value type
+export extern void* LLVMGlobalGetValueType(void* global);
+
+## Returns a function type's result type.
+##
+## @param function_type the function type
+## @returns the result type
+export extern void* LLVMGetReturnType(void* function_type);
+
+## Returns the number of a function type's parameters.
+##
+## @param function_type the function type
+## @returns the count
+export extern uint LLVMCountParamTypes(void* function_type);
+
+## Writes a function type's parameter types to `types`.
+##
+## @param function_type the function type
+## @param types room for `LLVMCountParamTypes` handles
+export extern void LLVMGetParamTypes(void* function_type, void** types);
+
+## Returns a struct type's name, or null for a literal struct.
+##
+## @param struct_type the struct type
+## @returns the name, which the type owns
+export extern char* LLVMGetStructName(void* struct_type);
+
+## Returns the number of a struct type's fields.
+##
+## @param struct_type the struct type
+## @returns the count
+export extern uint LLVMCountStructElementTypes(void* struct_type);
+
+## Returns a struct type's field type.
+##
+## @param struct_type the struct type
+## @param index the field's position
+## @returns the field's type
+export extern void* LLVMStructGetTypeAtIndex(void* struct_type, uint index);
+
+## Returns whether a struct type has no body yet.
+##
+## @param struct_type the struct type
+## @returns nonzero when it is opaque
+export extern int LLVMIsOpaqueStruct(void* struct_type);
+
+## Returns an array's or vector's element type.
+##
+## @param llvm_type the array, vector or pointer type
+## @returns the element type
+export extern void* LLVMGetElementType(void* llvm_type);
+
+## Returns an array type's length.
+##
+## @param array_type the array type
+## @returns the length
+export extern ulong LLVMGetArrayLength2(void* array_type);
+
+## Returns a vector type's length.
+##
+## @param vector_type the vector type
+## @returns the length
+export extern uint LLVMGetVectorSize(void* vector_type);
+
+## Returns whether a value is a constant.
+##
+## @param value the value
+## @returns nonzero when it is constant
+export extern int LLVMIsConstant(void* value);
+
+## Returns the value when it is a `ConstantInt`, else null.
+##
+## @param value the value
+## @returns the value or null
+export extern void* LLVMIsAConstantInt(void* value);
+
+## Returns the value when it is a `Function`, else null.
+##
+## @param value the value
+## @returns the value or null
+export extern void* LLVMIsAFunction(void* value);
+
+## Returns a constant integer zero-extended to 64 bits.
+##
+## @param value the `ConstantInt`
+## @returns its value
+export extern ulong LLVMConstIntGetZExtValue(void* value);
+
+## Returns a constant integer sign-extended to 64 bits.
+##
+## @param value the `ConstantInt`
+## @returns its value
+export extern long LLVMConstIntGetSExtValue(void* value);
+
+## Returns an integer constant of type `llvm_type` with every bit set.
+##
+## @param llvm_type the integer type
+## @returns the constant
+export extern void* LLVMConstAllOnes(void* llvm_type);
+
+## Returns the null pointer of a pointer type.
+##
+## @param llvm_type the pointer type
+## @returns the constant
+export extern void* LLVMConstPointerNull(void* llvm_type);
+
+## Returns a function's first basic block, or null.
+##
+## @param function the function
+## @returns the block or null
+export extern void* LLVMGetFirstBasicBlock(void* function);
+
+## Returns a function's last basic block, or null.
+##
+## @param function the function
+## @returns the block or null
+export extern void* LLVMGetLastBasicBlock(void* function);
+
+## Returns the block after `block` in its function, or null.
+##
+## @param block the block
+## @returns the next block or null
+export extern void* LLVMGetNextBasicBlock(void* block);
+
+## Returns the number of a function's basic blocks.
+##
+## @param function the function
+## @returns the count
+export extern uint LLVMCountBasicBlocks(void* function);
+
+## Creates a block and inserts it before `before`.
+##
+## @param context the context
+## @param before the block to insert before
+## @param name the block's name
+## @returns the new block
+export extern void* LLVMInsertBasicBlockInContext(void* context, void* before, char* name);
+
+## Moves `block` to just after `after`.
+##
+## @param block the block to move
+## @param after the block to follow
+export extern void LLVMMoveBasicBlockAfter(void* block, void* after);
+
+## Returns a block's first instruction, or null.
+##
+## @param block the block
+## @returns the instruction or null
+export extern void* LLVMGetFirstInstruction(void* block);
+
+## Returns a block's last instruction, or null.
+##
+## @param block the block
+## @returns the instruction or null
+export extern void* LLVMGetLastInstruction(void* block);
+
+## Returns the instruction after `instruction`, or null.
+##
+## @param instruction the instruction
+## @returns the next instruction or null
+export extern void* LLVMGetNextInstruction(void* instruction);
+
+## Returns an instruction's opcode (`LLVMOpcode`).
+##
+## @param instruction the instruction
+## @returns the opcode
+export extern int LLVMGetInstructionOpcode(void* instruction);
+
+## Returns the block an instruction is in.
+##
+## @param instruction the instruction
+## @returns the block
+export extern void* LLVMGetInstructionParent(void* instruction);
+
+## Removes an instruction from its block and deletes it.
+##
+## @param instruction the instruction
+export extern void LLVMInstructionEraseFromParent(void* instruction);
+
+## Returns a module's first function, or null.
+##
+## @param module the module
+## @returns the function or null
+export extern void* LLVMGetFirstFunction(void* module);
+
+## Returns the function after `function` in its module, or null.
+##
+## @param function the function
+## @returns the next function or null
+export extern void* LLVMGetNextFunction(void* function);
+
+## Returns a module's first global variable, or null.
+##
+## @param module the module
+## @returns the global or null
+export extern void* LLVMGetFirstGlobal(void* module);
+
+## Returns the global variable after `global`, or null.
+##
+## @param global the global
+## @returns the next global or null
+export extern void* LLVMGetNextGlobal(void* global);
+
+## Deletes a function from its module.
+##
+## @param function the function
+export extern void LLVMDeleteFunction(void* function);
+
+## Returns a value's first use, or null when nothing uses it.
+##
+## @param value the value
+## @returns the use or null
+export extern void* LLVMGetFirstUse(void* value);
+
+## Sets whether a global's address is significant (`LLVMUnnamedAddr`).
+##
+## @param global the global
+## @param unnamed 0 for none, 1 for `local_unnamed_addr`, 2 for `unnamed_addr`
+export extern void LLVMSetUnnamedAddress(void* global, int unnamed);
+
+## Sets a global variable's `thread_local` mode (`LLVMThreadLocalMode`).
+##
+## @param global the global
+## @param mode the mode; 0 for not thread-local
+export extern void LLVMSetThreadLocalMode(void* global, int mode);
+
+## Sets a global's, alloca's, load's or store's alignment.
+##
+## @param value the value
+## @param bytes the alignment
+export extern void LLVMSetAlignment(void* value, uint bytes);
+
+## Sets an instruction's metadata of kind `kind`.
+##
+## @param instruction the instruction
+## @param kind the kind, from `LLVMGetMDKindIDInContext`
+## @param node the metadata, as a value
+export extern void LLVMSetMetadata(void* instruction, uint kind, void* node);
+
+## Returns the kind of metadata named `name` (`tbaa`).
+##
+## @param context the context
+## @param name the name
+## @param length the name's length in bytes
+## @returns the kind
+export extern uint LLVMGetMDKindIDInContext(void* context, char* name, uint length);
+
+## Returns a metadata string.
+##
+## @param context the context
+## @param text the string
+## @param length its length in bytes
+## @returns the metadata
+export extern void* LLVMMDStringInContext2(void* context, char* text, ulong length);
+
+## Returns a metadata tuple of `count` operands.
+##
+## @param context the context
+## @param operands the operands
+## @param count how many
+## @returns the metadata
+export extern void* LLVMMDNodeInContext2(void* context, void** operands, ulong count);
+
+## Wraps metadata as a value.
+##
+## @param context the context
+## @param metadata the metadata
+## @returns the value
+export extern void* LLVMMetadataAsValue(void* context, void* metadata);
+
+## Wraps a constant as metadata.
+##
+## @param value the constant
+## @returns the metadata
+export extern void* LLVMValueAsMetadata(void* value);
+
+## Returns the ID of the intrinsic named `name` (`llvm.trap`), or 0.
+##
+## @param name the name
+## @param length its length in bytes
+## @returns the ID
+export extern uint LLVMLookupIntrinsicID(char* name, ulong length);
+
+## Declares (or finds) an intrinsic in a module, overloaded on `types`.
+##
+## @param module the module
+## @param id the intrinsic's ID
+## @param types the overload's types
+## @param count how many
+## @returns the function
+export extern void* LLVMGetIntrinsicDeclaration(void* module, uint id, void** types, ulong count);
+
+## Returns an intrinsic's function type for the overload on `types`.
+##
+## @param context the context
+## @param id the intrinsic's ID
+## @param types the overload's types
+## @param count how many
+## @returns the function type
+export extern void* LLVMIntrinsicGetType(void* context, uint id, void** types, ulong count);
+
+## Moves the builder to just before `instruction`.
+##
+## @param builder the builder
+## @param instruction the instruction
+export extern void LLVMPositionBuilderBefore(void* builder, void* instruction);
+
+## Adds an attribute to a call instruction (index as for `LLVMAddAttributeAtIndex`).
+##
+## @param call the call
+## @param index the attribute index
+## @param attribute the attribute
+export extern void LLVMAddCallSiteAttribute(void* call, uint index, void* attribute);
+
+## Marks a load or store volatile, or not.
+##
+## @param instruction the load or store
+## @param volatile nonzero for volatile
+export extern void LLVMSetVolatile(void* instruction, int volatile);
+
+## Builds `atomicrmw`.
+##
+## @param builder the builder
+## @param op the operation (`LLVMAtomicRMWBinOp`)
+## @param pointer the address
+## @param value the operand
+## @param ordering the ordering (`LLVMAtomicOrdering`)
+## @param single_thread nonzero for single-thread scope
+## @returns the old value
+export extern void* LLVMBuildAtomicRMW(
+    void* builder, int op, void* pointer, void* value, int ordering, int single_thread
+);
+
+## Builds `cmpxchg`.
+##
+## @param builder the builder
+## @param pointer the address
+## @param expected the value expected there
+## @param replacement the value to store
+## @param success the ordering on success
+## @param failure the ordering on failure
+## @param single_thread nonzero for single-thread scope
+## @returns the `{ old, succeeded }` pair
+export extern void* LLVMBuildAtomicCmpXchg(
+    void* builder, void* pointer, void* expected, void* replacement, int success, int failure, int single_thread
+);
+
+## Sets an atomic load's or store's ordering.
+##
+## @param instruction the load or store
+## @param ordering the ordering (`LLVMAtomicOrdering`)
+export extern void LLVMSetOrdering(void* instruction, int ordering);
+
+## Builds `llvm.memcpy`.
+##
+## @param builder the builder
+## @param destination the destination
+## @param destination_align its alignment
+## @param source the source
+## @param source_align its alignment
+## @param size the byte count
+## @returns the call
+export extern void* LLVMBuildMemCpy(
+    void* builder, void* destination, uint destination_align, void* source, uint source_align, void* size
+);
+
+## Builds `llvm.memmove`.
+##
+## @param builder the builder
+## @param destination the destination
+## @param destination_align its alignment
+## @param source the source
+## @param source_align its alignment
+## @param size the byte count
+## @returns the call
+export extern void* LLVMBuildMemMove(
+    void* builder, void* destination, uint destination_align, void* source, uint source_align, void* size
+);
+
+## Builds `llvm.memset`.
+##
+## @param builder the builder
+## @param pointer the destination
+## @param value the byte
+## @param length the byte count
+## @param align the destination's alignment
+## @returns the call
+export extern void* LLVMBuildMemSet(void* builder, void* pointer, void* value, void* length, uint align);
+
+## Builds `extractelement`.
+##
+## @param builder the builder
+## @param vector the vector
+## @param index the lane
+## @param name the result's name
+## @returns the lane's value
+export extern void* LLVMBuildExtractElement(void* builder, void* vector, void* index, char* name);
+
+## Builds `insertelement`.
+##
+## @param builder the builder
+## @param vector the vector
+## @param element the new lane value
+## @param index the lane
+## @param name the result's name
+## @returns the new vector
+export extern void* LLVMBuildInsertElement(void* builder, void* vector, void* element, void* index, char* name);
+
+## Builds `shufflevector`.
+##
+## @param builder the builder
+## @param left the first vector
+## @param right the second vector
+## @param mask the constant lane mask
+## @param name the result's name
+## @returns the new vector
+export extern void* LLVMBuildShuffleVector(void* builder, void* left, void* right, void* mask, char* name);
+
+## Builds `fence`.
+##
+## @param builder the builder
+## @param ordering the ordering
+## @param single_thread nonzero for single-thread scope
+## @param name the result's name
+## @returns the instruction
+export extern void* LLVMBuildFence(void* builder, int ordering, int single_thread, char* name);
+
+## Returns the size of a type as a constant `i64`.
+##
+## @param llvm_type the type
+## @returns the size
+export extern void* LLVMSizeOf(void* llvm_type);
+
+## Returns a constant vector.
+##
+## @param values the lanes
+## @param count how many
+## @returns the vector
+export extern void* LLVMConstVector(void** values, uint count);
+
+## Returns whether an intrinsic takes types to name a declaration.
+##
+## @param id the intrinsic's ID
+## @returns nonzero when overloaded
+export extern int LLVMIntrinsicIsOverloaded(uint id);
+
+## Returns the name of an overloaded intrinsic for `types`; free it with
+## `LLVMDisposeMessage`.
+##
+## @param module the module
+## @param id the intrinsic's ID
+## @param types the overload's types
+## @param count how many
+## @param length receives the name's length
+## @returns the name
+export extern char* LLVMIntrinsicCopyOverloadedName2(void* module, uint id, void** types, ulong count, ulong* length);
+
+## Returns a function's intrinsic ID, or 0.
+##
+## @param function the function
+## @returns the ID
+export extern uint LLVMGetIntrinsicID(void* function);
+
+## Returns an inline assembly value.
+##
+## @param llvm_type the function type
+## @param assembly the assembly text
+## @param assembly_length its length
+## @param constraints the constraints
+## @param constraints_length their length
+## @param side_effects nonzero when it has side effects
+## @param align_stack nonzero to align the stack
+## @param dialect 0 for AT&T, 1 for Intel
+## @param can_throw nonzero when it may unwind
+## @returns the value
+export extern void* LLVMGetInlineAsm(
+    void* llvm_type,
+    char* assembly,
+    ulong assembly_length,
+    char* constraints,
+    ulong constraints_length,
+    int side_effects,
+    int align_stack,
+    int dialect,
+    int can_throw
+);
+
+## Builds a test that a pointer is null.
+##
+## @param builder the builder
+## @param value the pointer
+## @param name the result's name
+## @returns an `i1`
+export extern void* LLVMBuildIsNull(void* builder, void* value, char* name);
+
+## Builds a test that a pointer is not null.
+##
+## @param builder the builder
+## @param value the pointer
+## @param name the result's name
+## @returns an `i1`
+export extern void* LLVMBuildIsNotNull(void* builder, void* value, char* name);
+
+## Builds a signed integer cast: a truncation, sign extension or nothing.
+##
+## @param builder the builder
+## @param value the integer
+## @param llvm_type the integer type to convert to
+## @param name the result's name
+## @returns the result
+export extern void* LLVMBuildIntCast(void* builder, void* value, void* llvm_type, char* name);
+
+## Returns whether a function type takes variadic arguments.
+##
+## @param function_type the type
+## @returns nonzero when variadic
+export extern int LLVMIsFunctionVarArg(void* function_type);
+
+## Returns a constant integer converted to a pointer.
+##
+## @param value the constant
+## @param llvm_type the pointer type
+## @returns the constant
+export extern void* LLVMConstIntToPtr(void* value, void* llvm_type);
+
+## Returns a constant `getelementptr`.
+##
+## @param llvm_type the type the indices step through
+## @param value the base constant
+## @param indices the indices
+## @param count how many
+## @returns the constant
+export extern void* LLVMConstGEP2(void* llvm_type, void* value, void** indices, uint count);
+
+## Returns an operand of a user.
+##
+## @param value the user
+## @param index the operand's position
+## @returns the operand
+export extern void* LLVMGetOperand(void* value, uint index);
+
+## Returns how many operands a user has.
+##
+## @param value the user
+## @returns the count
+export extern int LLVMGetNumOperands(void* value);
+
+## Returns `value` when it is an instruction, else null.
+##
+## @param value the value
+## @returns the value or null
+export extern void* LLVMIsAInstruction(void* value);
+
+## Returns the source element type of a `getelementptr`.
+##
+## @param value the instruction
+## @returns the type
+export extern void* LLVMGetGEPSourceElementType(void* value);
+
+## Returns an enum attribute at a position, or null.
+##
+## @param function the function
+## @param index the position (0 the return value, then 1 per parameter, -1 the function)
+## @param kind the attribute kind
+## @returns the attribute or null
+export extern void* LLVMGetEnumAttributeAtIndex(void* function, uint index, uint kind);
+
+## Sets a global's DLL storage class (0 default, 1 import, 2 export).
+##
+## @param global the global
+## @param class the class
+export extern void LLVMSetDLLStorageClass(void* global, int class);

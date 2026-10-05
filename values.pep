@@ -153,6 +153,104 @@ export struct Type {
         var refs = _values(elements);
         return Value(llvm_c.LLVMConstArray2(ref, refs.data(), refs.count as ulong));
     }
+
+    ## Returns whether this is the same type as `other`.
+    ##
+    ## @param other the other type
+    ## @returns true when both handles are the same type
+    same(other: Type): bool {
+        return ref == other.ref;
+    }
+
+    ## Returns a struct type's name, or "" for a literal struct.
+    ##
+    ## @returns the name
+    struct_name(): String {
+        return _copy_string(llvm_c.LLVMGetStructName(ref));
+    }
+
+    ## Returns the number of a struct type's fields.
+    ##
+    ## @returns the count
+    field_count(): uint {
+        return llvm_c.LLVMCountStructElementTypes(ref);
+    }
+
+    ## Returns a struct type's field type.
+    ##
+    ## @param index the field's position
+    ## @returns the type
+    field(index: uint): Type {
+        return Type(llvm_c.LLVMStructGetTypeAtIndex(ref, index));
+    }
+
+    ## Returns whether a struct type has no body yet.
+    ##
+    ## @returns true when it is opaque
+    is_opaque(): bool {
+        return llvm_c.LLVMIsOpaqueStruct(ref) != 0;
+    }
+
+    ## Returns an array's or vector's element type.
+    ##
+    ## @returns the element type
+    element_type(): Type {
+        return Type(llvm_c.LLVMGetElementType(ref));
+    }
+
+    ## Returns an array type's length.
+    ##
+    ## @returns the length
+    array_length(): ulong {
+        return llvm_c.LLVMGetArrayLength2(ref);
+    }
+
+    ## Returns a vector type's length.
+    ##
+    ## @returns the length
+    vector_size(): uint {
+        return llvm_c.LLVMGetVectorSize(ref);
+    }
+
+    ## Returns a function type's result type.
+    ##
+    ## @returns the result type
+    return_type(): Type {
+        return Type(llvm_c.LLVMGetReturnType(ref));
+    }
+
+    ## Returns a function type's parameter types.
+    ##
+    ## @returns the types
+    param_types(): Type[] {
+        var count = llvm_c.LLVMCountParamTypes(ref);
+        var refs = _RefArray(count);
+        llvm_c.LLVMGetParamTypes(ref, refs.data());
+        var types = Array<Type>();
+        for (var index in 0..count) {
+            types.append(Type(refs.data()[index]));
+        }
+        return types;
+    }
+
+    ## Returns the integer constant of this type with every bit set.
+    ##
+    ## @returns the constant
+    all_ones(): Value {
+        return Value(llvm_c.LLVMConstAllOnes(ref));
+    }
+
+    ## Returns this type's size as a constant `i64`.
+    ##
+    ## @returns the constant
+    size_constant(): Value {
+        return Value(llvm_c.LLVMSizeOf(ref));
+    }
+
+    ## Returns whether a function type takes variadic arguments.
+    is_variadic(): bool {
+        return llvm_c.LLVMIsFunctionVarArg(ref) != 0;
+    }
 }
 
 ## An LLVM value (`LLVMValueRef`): a constant, function, global variable,
@@ -323,6 +421,248 @@ export struct Value {
     verify_function(): bool {
         return llvm_c.LLVMVerifyFunction(ref, 2) == 0;
     }
+
+    ## Returns whether this is the same value as `other`.
+    ##
+    ## @param other the other value
+    ## @returns true when both handles are the same value
+    same(other: Value): bool {
+        return ref == other.ref;
+    }
+
+    ## Returns whether the value is a constant.
+    ##
+    ## @returns true for a constant
+    is_constant(): bool {
+        return llvm_c.LLVMIsConstant(ref) != 0;
+    }
+
+    ## Returns whether the value is an integer constant.
+    ##
+    ## @returns true for a `ConstantInt`
+    is_constant_int(): bool {
+        return llvm_c.LLVMIsAConstantInt(ref) != __null;
+    }
+
+    ## Returns whether the value is a function.
+    ##
+    ## @returns true for a function
+    is_function(): bool {
+        return llvm_c.LLVMIsAFunction(ref) != __null;
+    }
+
+    ## Returns an integer constant's value, zero-extended.
+    ##
+    ## @returns the value
+    zero_extended(): ulong {
+        return llvm_c.LLVMConstIntGetZExtValue(ref);
+    }
+
+    ## Returns an integer constant's value, sign-extended.
+    ##
+    ## @returns the value
+    sign_extended(): long {
+        return llvm_c.LLVMConstIntGetSExtValue(ref);
+    }
+
+    ## Returns a function's or global's value type (a function's function
+    ## type).
+    ##
+    ## @returns the type
+    global_type(): Type {
+        return Type(llvm_c.LLVMGlobalGetValueType(ref));
+    }
+
+    ## Returns a function's first basic block, or a null block.
+    ##
+    ## @returns the block
+    first_block(): BasicBlock {
+        return BasicBlock(llvm_c.LLVMGetFirstBasicBlock(ref));
+    }
+
+    ## Returns a function's last basic block, or a null block.
+    ##
+    ## @returns the block
+    last_block(): BasicBlock {
+        return BasicBlock(llvm_c.LLVMGetLastBasicBlock(ref));
+    }
+
+    ## Returns a function's basic blocks in order.
+    ##
+    ## @returns the blocks
+    blocks(): BasicBlock[] {
+        var blocks = Array<BasicBlock>();
+        var block = first_block();
+        while (!block.is_null()) {
+            blocks.append(block);
+            block = block.next();
+        }
+        return blocks;
+    }
+
+    ## Returns the number of a function's basic blocks.
+    ##
+    ## @returns the count
+    block_count(): uint {
+        return llvm_c.LLVMCountBasicBlocks(ref);
+    }
+
+    ## Returns whether anything uses the value.
+    ##
+    ## @returns true when it has a use
+    has_uses(): bool {
+        return llvm_c.LLVMGetFirstUse(ref) != __null;
+    }
+
+    ## Deletes a function from its module.
+    delete_function() {
+        llvm_c.LLVMDeleteFunction(ref);
+    }
+
+    ## Sets whether a global's address is significant: 0 for none, 1 for
+    ## `local_unnamed_addr`, 2 for `unnamed_addr`.
+    ##
+    ## @param unnamed the setting
+    set_unnamed_address(unnamed: int) {
+        llvm_c.LLVMSetUnnamedAddress(ref, unnamed);
+    }
+
+    ## Sets a global variable's `thread_local` mode (1 for the general
+    ## dynamic model), or 0 for none.
+    ##
+    ## @param mode the mode
+    set_thread_local_mode(mode: int) {
+        llvm_c.LLVMSetThreadLocalMode(ref, mode);
+    }
+
+    ## Sets a global's, alloca's, load's or store's alignment.
+    ##
+    ## @param bytes the alignment
+    set_alignment(bytes: uint) {
+        llvm_c.LLVMSetAlignment(ref, bytes);
+    }
+
+    ## Sets an instruction's metadata of kind `kind`.
+    ##
+    ## @param kind the kind, from `Context.metadata_kind`
+    ## @param node the metadata, as a value (`Context.metadata_value`)
+    set_metadata(kind: uint, node: Value) {
+        llvm_c.LLVMSetMetadata(ref, kind, node.ref);
+    }
+
+    ## Returns an instruction's opcode (`LLVMOpcode`).
+    ##
+    ## @returns the opcode
+    opcode(): int {
+        return llvm_c.LLVMGetInstructionOpcode(ref);
+    }
+
+    ## Returns the instruction after this one, or a null value.
+    ##
+    ## @returns the instruction
+    next_instruction(): Value {
+        return Value(llvm_c.LLVMGetNextInstruction(ref));
+    }
+
+    ## Returns the block this instruction is in.
+    ##
+    ## @returns the block
+    instruction_block(): BasicBlock {
+        return BasicBlock(llvm_c.LLVMGetInstructionParent(ref));
+    }
+
+    ## Removes this instruction from its block and deletes it.
+    erase() {
+        llvm_c.LLVMInstructionEraseFromParent(ref);
+    }
+
+    ## Marks a load or store volatile.
+    ##
+    ## @param is_volatile whether it is volatile
+    set_volatile(is_volatile: bool) {
+        llvm_c.LLVMSetVolatile(ref, is_volatile ? 1 : 0);
+    }
+
+    ## Sets an atomic load's or store's ordering (`LLVMAtomicOrdering`).
+    ##
+    ## @param ordering the ordering
+    set_ordering(ordering: int) {
+        llvm_c.LLVMSetOrdering(ref, ordering);
+    }
+
+    ## Adds an attribute to a call instruction: to the call itself at
+    ## index `0xFFFFFFFF`, its result at 0, an argument at its position
+    ## plus 1.
+    ##
+    ## @param index the attribute index
+    ## @param attribute the attribute
+    add_call_attribute(index: uint, attribute: Attribute) {
+        llvm_c.LLVMAddCallSiteAttribute(ref, index, attribute.ref);
+    }
+
+    ## Returns a constant integer converted to a pointer of `pointer_type`.
+    ##
+    ## @param pointer_type the pointer type
+    ## @returns the constant
+    const_int_to_pointer(pointer_type: Type): Value {
+        return Value(llvm_c.LLVMConstIntToPtr(ref, pointer_type.ref));
+    }
+
+    ## Returns a constant `getelementptr` from this constant.
+    ##
+    ## @param source_type the type the indices step through
+    ## @param indices the indices
+    ## @returns the constant
+    const_gep(source_type: Type, indices: Value[]): Value {
+        var refs = _values(indices);
+        return Value(llvm_c.LLVMConstGEP2(source_type.ref, ref, refs.data(), refs.count as uint));
+    }
+
+    ## Returns operand `index` of this user.
+    ##
+    ## @param index the operand's position
+    ## @returns the operand
+    operand(index: uint): Value {
+        return Value(llvm_c.LLVMGetOperand(ref, index));
+    }
+
+    ## Returns how many operands this user has.
+    operand_count(): uint {
+        return llvm_c.LLVMGetNumOperands(ref) as uint;
+    }
+
+    ## Returns whether the value is an instruction.
+    is_instruction(): bool {
+        return llvm_c.LLVMIsAInstruction(ref) != __null;
+    }
+
+    ## Returns the source element type of a `getelementptr`.
+    gep_source_type(): Type {
+        return Type(llvm_c.LLVMGetGEPSourceElementType(ref));
+    }
+
+    ## Returns the function's intrinsic ID, or 0 when it is no intrinsic.
+    intrinsic_id(): uint {
+        return llvm_c.LLVMGetIntrinsicID(ref);
+    }
+
+    ## Returns whether the function's parameter `index` has enum attribute
+    ## `name`.
+    ##
+    ## @param index the parameter's position
+    ## @param name the attribute (`signext`)
+    ## @returns whether it has it
+    has_param_attribute(index: uint, name: String): bool {
+        var kind = llvm_c.LLVMGetEnumAttributeKindForName(_c_string(name), name.size);
+        return llvm_c.LLVMGetEnumAttributeAtIndex(ref, index + 1, kind) != __null;
+    }
+
+    ## Sets the global's DLL storage class: 0 default, 1 import, 2 export.
+    ##
+    ## @param storage the class
+    set_dll_storage_class(storage: int) {
+        llvm_c.LLVMSetDLLStorageClass(ref, storage);
+    }
 }
 
 ## Debug info metadata (`LLVMMetadataRef`): a file, compile unit,
@@ -384,6 +724,42 @@ export struct BasicBlock {
     ## @returns the terminator, or a null value
     terminator(): Value {
         return Value(llvm_c.LLVMGetBasicBlockTerminator(ref));
+    }
+
+    ## Returns whether this is the same block as `other`.
+    ##
+    ## @param other the other block
+    ## @returns true when both handles are the same block
+    same(other: BasicBlock): bool {
+        return ref == other.ref;
+    }
+
+    ## Returns the block after this one in its function, or a null block.
+    ##
+    ## @returns the block
+    next(): BasicBlock {
+        return BasicBlock(llvm_c.LLVMGetNextBasicBlock(ref));
+    }
+
+    ## Returns the block's first instruction, or a null value.
+    ##
+    ## @returns the instruction
+    first_instruction(): Value {
+        return Value(llvm_c.LLVMGetFirstInstruction(ref));
+    }
+
+    ## Returns the block's last instruction, or a null value.
+    ##
+    ## @returns the instruction
+    last_instruction(): Value {
+        return Value(llvm_c.LLVMGetLastInstruction(ref));
+    }
+
+    ## Moves the block to just after `after`.
+    ##
+    ## @param after the block to follow
+    move_after(after: BasicBlock) {
+        llvm_c.LLVMMoveBasicBlockAfter(ref, after.ref);
     }
 }
 

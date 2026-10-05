@@ -244,3 +244,10 @@ export extern char* LLVMGetErrorMessage(void* error);
 ##
 ## @param message the message
 export extern void LLVMDisposeErrorMessage(char* message);
+
+## Returns how many bytes a store of a type writes.
+##
+## @param data the data layout
+## @param llvm_type the type
+## @returns the size
+export extern ulong LLVMStoreSizeOfType(void* data, void* llvm_type);

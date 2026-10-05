@@ -194,4 +194,88 @@ export struct Module {
         }
         return Result<void>.ok();
     }
+
+    ## Returns the module's functions, in order.
+    ##
+    ## @returns the functions
+    functions(): Value[] {
+        var functions = Array<Value>();
+        var function = llvm_c.LLVMGetFirstFunction(ref);
+        while (function != __null) {
+            functions.append(Value(function));
+            function = llvm_c.LLVMGetNextFunction(function);
+        }
+        return functions;
+    }
+
+    ## Returns the module's global variables, in order.
+    ##
+    ## @returns the globals
+    globals(): Value[] {
+        var globals = Array<Value>();
+        var global = llvm_c.LLVMGetFirstGlobal(ref);
+        while (global != __null) {
+            globals.append(Value(global));
+            global = llvm_c.LLVMGetNextGlobal(global);
+        }
+        return globals;
+    }
+
+    ## Declares (or finds) the intrinsic named `name`, such as `llvm.trap`
+    ## or `llvm.sadd.with.overflow` overloaded on `[i32]`.
+    ##
+    ## @param name the intrinsic's name
+    ## @param types the overload's types
+    ## @returns the function, or None when LLVM has no such intrinsic
+    intrinsic(name: String, types: Type[] = Array<Type>()): Value? {
+        var id = llvm_c.LLVMLookupIntrinsicID(_c_string(name), name.size);
+        if (id == 0) {
+            return Optional<Value>.Empty;
+        }
+        var refs = _types(types);
+        return Optional<Value>.Value(
+            Value(llvm_c.LLVMGetIntrinsicDeclaration(ref, id, refs.data(), refs.count as ulong))
+        );
+    }
+
+    ## Returns the name of overloaded intrinsic `id` for `types`
+    ## (`llvm.ctpop.i32`).
+    ##
+    ## @param id the intrinsic's ID (`lookup_intrinsic_id`)
+    ## @param types the overload's types
+    ## @returns the name
+    overloaded_intrinsic_name(id: uint, types: Type[]): String {
+        var refs = _types(types);
+        var length = _OutPointer();
+        return _take_message(
+            llvm_c.LLVMIntrinsicCopyOverloadedName2(
+                ref, id, refs.data(), refs.count as ulong, unsafe_cast<__ptr<ulong>>(length.data())
+            )
+        );
+    }
+}
+
+## Returns the ID of the intrinsic named `name`, or 0 when there is none.
+##
+## @param name the intrinsic's name (`llvm.ctpop`)
+## @returns the ID
+export lookup_intrinsic_id(name: String): uint {
+    return llvm_c.LLVMLookupIntrinsicID(_c_string(name), name.size);
+}
+
+## Returns whether intrinsic `id` takes types to name a declaration.
+##
+## @param id the intrinsic's ID
+## @returns whether it is overloaded
+export intrinsic_is_overloaded(id: uint): bool {
+    return llvm_c.LLVMIntrinsicIsOverloaded(id) != 0;
+}
+
+## Returns a constant vector of `elements`.
+##
+## @param elements the lanes, all constants of one type
+## @returns the vector
+export const_vector(elements: Value[]): Value {
+    var refs = _values(elements);
+    return Value(llvm_c.LLVMConstVector(refs.data(), refs.count as uint));
 }

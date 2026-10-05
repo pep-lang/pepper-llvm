@@ -343,4 +343,12 @@ export struct TargetMachine {
         }
         return Result<u8[]>.ok(bytes);
     }
+
+    ## Returns how many bytes a store of `value_type` writes on this machine.
+    ##
+    ## @param value_type a sized type
+    ## @returns the size
+    store_size_of(value_type: Type): ulong {
+        return llvm_c.LLVMStoreSizeOfType(_data.value, value_type.ref);
+    }
 }
