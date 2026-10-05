@@ -347,6 +347,30 @@ export struct Value {
         llvm_c.LLVMSetInitializer(ref, value.ref);
     }
 
+    ## Returns a global variable's initial value.
+    ##
+    ## @returns the initializer, or Empty for a declaration
+    initializer(): Value? {
+        var value = llvm_c.LLVMGetInitializer(ref);
+        if (value == __null) {
+            return Optional<Value>.Empty;
+        }
+        return Optional<Value>.Value(Value(value));
+    }
+
+    ## Deletes a global variable from its module.
+    delete_global() {
+        llvm_c.LLVMDeleteGlobal(ref);
+    }
+
+    ## Puts a global in the object file section named `name`, exactly as
+    ## given.
+    ##
+    ## @param name the section, such as `.init_array`
+    set_section(name: String) {
+        llvm_c.LLVMSetSection(ref, _c_string(name));
+    }
+
     ## Marks a global variable constant, or not.
     ##
     ## @param constant whether the variable is constant

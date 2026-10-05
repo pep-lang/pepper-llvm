@@ -346,6 +346,9 @@ export extern void LLVMSetLinkage(void* global, int linkage);
 ## @param global the global variable
 ## @param value the constant
 export extern void LLVMSetInitializer(void* global, void* value);
+export extern void* LLVMGetInitializer(void* global);
+export extern void LLVMDeleteGlobal(void* global);
+export extern void LLVMSetSection(void* global, char* section);
 
 ## Marks a global variable constant.
 ##

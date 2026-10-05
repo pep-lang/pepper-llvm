@@ -135,6 +135,20 @@ structs_globals_and_calls_verify() {
 }
 
 [Test]
+globals_read_their_initializer_and_move_sections() {
+    var context = llvm.Context();
+    var module = llvm.Module(context, "sections");
+    var table = module.add_global(context.int32_type(), "table");
+    expect_true(!table.initializer().is_value());
+    table.set_initializer(context.int32_type().const_int(7));
+    expect_true(table.initializer().value().to_string().contains("7"));
+    table.set_section(".init_array");
+    expect_true(module.to_string().contains("section \".init_array\""));
+    module.add_global(context.int32_type(), "gone").delete_global();
+    expect_true(!module.global("gone").is_value());
+}
+
+[Test]
 a_block_without_a_terminator_fails_verification() {
     var context = llvm.Context();
     var broken = llvm.Module(context, "broken");
