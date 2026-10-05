@@ -1,6 +1,7 @@
 # Tests the llvm module: builds IR, verifies it, optimizes it and compiles
 # it to object files for the host and other targets.
 
+import io;
 import llvm;
 
 # int max(int a, int b) { return a > b ? a : b; } with branches and a phi.
@@ -146,6 +147,28 @@ globals_read_their_initializer_and_move_sections() {
     expect_true(module.to_string().contains("section \".init_array\""));
     module.add_global(context.int32_type(), "gone").delete_global();
     expect_true(!module.global("gone").is_value());
+}
+
+[Test]
+bitcode_reads_back_and_a_clone_keeps_one_body() {
+    var context = llvm.Context();
+    var module = llvm.Module(context, "split");
+    build_max(context, module);
+    var path = "split_test.bc";
+    expect_true(module.write_bitcode(path).is_ok());
+    var read = llvm.Module.read_bitcode(context, path);
+    io.File.remove(io.Path(path));
+    expect_true(read.is_ok());
+    var copy = read.value().clone();
+    var max = copy.function("max").value();
+    max.set_visibility(llvm.Visibility.Hidden);
+    max.delete_body();
+    expect_true(max.is_declaration());
+    expect_true(copy.verify().is_ok());
+    expect_true(copy.to_string().contains("declare hidden i32 @max(i32, i32)"));
+    # The module it was copied from keeps its body.
+    expect_false(read.value().function("max").value().is_declaration());
+    expect_true(llvm.Module.read_bitcode(context, "no_such_file.bc").is_err());
 }
 
 [Test]

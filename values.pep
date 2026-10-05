@@ -538,9 +538,41 @@ export struct Value {
         return llvm_c.LLVMGetFirstUse(ref) != __null;
     }
 
+    ## Reports whether a function or global variable is only declared:
+    ## a function without a body, a global without an initializer.
+    ##
+    ## @returns true for a declaration
+    is_declaration(): bool {
+        return llvm_c.LLVMIsDeclaration(ref) != 0;
+    }
+
     ## Deletes a function from its module.
     delete_function() {
         llvm_c.LLVMDeleteFunction(ref);
+    }
+
+    ## Turns a function definition into a declaration: deletes its blocks,
+    ## personality and debug subprogram, and makes it external.
+    delete_body() {
+        var block = llvm_c.LLVMGetFirstBasicBlock(ref);
+        while (block != __null) {
+            var next = llvm_c.LLVMGetNextBasicBlock(block);
+            llvm_c.LLVMDeleteBasicBlock(block);
+            block = next;
+        }
+        if (llvm_c.LLVMHasPersonalityFn(ref) != 0) {
+            llvm_c.LLVMSetPersonalityFn(ref, __null);
+        }
+        llvm_c.LLVMSetSubprogram(ref, __null);
+        llvm_c.LLVMSetLinkage(ref, Linkage.External as int);
+    }
+
+    ## Sets a function's or global variable's visibility to other objects
+    ## linked with it.
+    ##
+    ## @param visibility the visibility
+    set_visibility(visibility: Visibility) {
+        llvm_c.LLVMSetVisibility(ref, visibility as int);
     }
 
     ## Sets whether a global's address is significant: 0 for none, 1 for
@@ -549,6 +581,14 @@ export struct Value {
     ## @param unnamed the setting
     set_unnamed_address(unnamed: int) {
         llvm_c.LLVMSetUnnamedAddress(ref, unnamed);
+    }
+
+    ## Returns whether a global's address is significant: 0 for none, 1 for
+    ## `local_unnamed_addr`, 2 for `unnamed_addr`.
+    ##
+    ## @returns the setting
+    unnamed_address(): int {
+        return llvm_c.LLVMGetUnnamedAddress(ref);
     }
 
     ## Sets a global variable's `thread_local` mode (1 for the general

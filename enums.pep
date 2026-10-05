@@ -105,6 +105,16 @@ export enum RealPredicate {
     True = 15,
 }
 
+## Who a linked symbol is visible to (`LLVMVisibility`).
+export enum Visibility {
+    ## Every object and shared library.
+    Default = 0,
+    ## Only the objects linked into the same executable or library.
+    Hidden = 1,
+    ## Every object, but always bound to this definition.
+    Protected = 2,
+}
+
 ## How a global is linked (`LLVMLinkage`).
 export enum Linkage {
     ## Visible to other objects.

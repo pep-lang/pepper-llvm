@@ -33,6 +33,33 @@ export struct Module {
         );
     }
 
+    construct(context: Context, ref: __ptr<void>) {
+        this.context = context;
+        _handle = Handle<__ptr<void>>(ref, (module) => llvm_c.LLVMDisposeModule(module));
+    }
+
+    ## Reads a module from a bitcode file, as `write_bitcode` writes it.
+    ##
+    ## @param context the context its types and constants belong to
+    ## @param path the bitcode file
+    ## @returns the module, or an Err when the file cannot be read or parsed
+    static read_bitcode(context: Context, path: String): Result<Module> {
+        var message = _OutPointer();
+        var buffer = _OutPointer();
+        if (llvm_c.LLVMCreateMemoryBufferWithContentsOfFile(
+            _c_string(path), buffer.data(), unsafe_cast<__ptr<__ptr<char>>>(message.data())
+        )
+            != 0) {
+            return Result<Module>.err(Error($"cannot read '{path}': {_take_message(message.get() as __ptr<char>)}"));
+        }
+        var owned = Handle<__ptr<void>>(buffer.get(), (memory) => llvm_c.LLVMDisposeMemoryBuffer(memory));
+        var module = _OutPointer();
+        if (llvm_c.LLVMParseBitcodeInContext2(context.ref, owned.value, module.data()) != 0) {
+            return Result<Module>.err(Error($"cannot parse the bitcode in '{path}'"));
+        }
+        return Result<Module>.ok(Module(context, module.get()));
+    }
+
     destruct {
         # Before `context` is released, which may dispose it.
         _handle.release();
@@ -51,6 +78,13 @@ export struct Module {
     ## @returns true while the module can be used
     is_owned(): bool {
         return _handle.is_owned();
+    }
+
+    ## Copies the module, in the same context.
+    ##
+    ## @returns the copy
+    clone(): Module {
+        return Module(context, llvm_c.LLVMCloneModule(ref));
     }
 
     ## Returns the module's target triple, or "" when none is set.

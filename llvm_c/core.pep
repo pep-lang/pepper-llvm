@@ -145,6 +145,34 @@ export extern int LLVMVerifyFunction(void* function, int action);
 ## @returns 0 on success
 export extern int LLVMWriteBitcodeToFile(void* module, char* path);
 
+## Reads a whole file into a memory buffer.
+##
+## @param path the file
+## @param buffer receives the buffer; free it with `LLVMDisposeMemoryBuffer`
+## @param message receives the reason on failure; free it with `LLVMDisposeMessage`
+## @returns nonzero on failure
+export extern int LLVMCreateMemoryBufferWithContentsOfFile(char* path, void** buffer, char** message);
+
+## Parses bitcode into a module of `context`. The buffer stays the caller's.
+##
+## @param context the context
+## @param buffer the bitcode
+## @param module receives the module
+## @returns nonzero on failure
+export extern int LLVMParseBitcodeInContext2(void* context, void* buffer, void** module);
+
+## Copies a module, in its context.
+##
+## @param module the module
+## @returns the copy
+export extern void* LLVMCloneModule(void* module);
+
+## Reports whether a function or global variable is only declared.
+##
+## @param global the function or global variable
+## @returns nonzero for a declaration
+export extern int LLVMIsDeclaration(void* global);
+
 # Types
 
 ## Returns the type's kind (`LLVMTypeKind`).
@@ -973,6 +1001,29 @@ export extern void* LLVMGetNextGlobal(void* global);
 ## @param function the function
 export extern void LLVMDeleteFunction(void* function);
 
+## Removes a basic block from its function and deletes it.
+##
+## @param block the block
+export extern void LLVMDeleteBasicBlock(void* block);
+
+## Sets (or, given null, clears) a function's personality function.
+##
+## @param function the function
+## @param personality the personality function
+export extern void LLVMSetPersonalityFn(void* function, void* personality);
+
+## Reports whether a function has a personality function.
+##
+## @param function the function
+## @returns nonzero when it has one
+export extern int LLVMHasPersonalityFn(void* function);
+
+## Sets a global value's visibility (`LLVMVisibility`).
+##
+## @param global the function or global variable
+## @param visibility 0 default, 1 hidden, 2 protected
+export extern void LLVMSetVisibility(void* global, int visibility);
+
 ## Returns a value's first use, or null when nothing uses it.
 ##
 ## @param value the value
@@ -984,6 +1035,12 @@ export extern void* LLVMGetFirstUse(void* value);
 ## @param global the global
 ## @param unnamed 0 for none, 1 for `local_unnamed_addr`, 2 for `unnamed_addr`
 export extern void LLVMSetUnnamedAddress(void* global, int unnamed);
+
+## Returns whether a global's address is significant (`LLVMUnnamedAddr`).
+##
+## @param global the function or global variable
+## @returns 0 for none, 1 for `local_unnamed_addr`, 2 for `unnamed_addr`
+export extern int LLVMGetUnnamedAddress(void* global);
 
 ## Sets a global variable's `thread_local` mode (`LLVMThreadLocalMode`).
 ##
