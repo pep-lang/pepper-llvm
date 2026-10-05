@@ -1018,6 +1018,31 @@ export extern void LLVMSetPersonalityFn(void* function, void* personality);
 ## @returns nonzero when it has one
 export extern int LLVMHasPersonalityFn(void* function);
 
+## Returns the module a function or global variable belongs to.
+##
+## @param global the function or global variable
+## @returns the module
+export extern void* LLVMGetGlobalParent(void* global);
+
+## Returns the module's comdat of this name, adding it when it has none.
+##
+## @param module the module
+## @param name the comdat's name
+## @returns the comdat
+export extern void* LLVMGetOrInsertComdat(void* module, char* name);
+
+## Returns the comdat a function or global variable is in, or null.
+##
+## @param global the function or global variable
+## @returns the comdat or null
+export extern void* LLVMGetComdat(void* global);
+
+## Puts a function or global variable in a comdat.
+##
+## @param global the function or global variable
+## @param comdat the comdat
+export extern void LLVMSetComdat(void* global, void* comdat);
+
 ## Sets a global value's visibility (`LLVMVisibility`).
 ##
 ## @param global the function or global variable

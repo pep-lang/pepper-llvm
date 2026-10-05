@@ -575,6 +575,24 @@ export struct Value {
         llvm_c.LLVMSetVisibility(ref, visibility as int);
     }
 
+    ## Puts a function or global variable in its module's comdat named
+    ## `name` (any selection kind), adding the comdat when needed: the
+    ## linker keeps one copy of a comdat's definitions across objects, which
+    ## a `linkonce_odr` definition needs on Windows.
+    ##
+    ## @param name the comdat's name, usually the symbol's own
+    set_comdat(name: String) {
+        var comdat = llvm_c.LLVMGetOrInsertComdat(llvm_c.LLVMGetGlobalParent(ref), _c_string(name));
+        llvm_c.LLVMSetComdat(ref, comdat);
+    }
+
+    ## Reports whether a function or global variable is in a comdat.
+    ##
+    ## @returns true when it is
+    has_comdat(): bool {
+        return llvm_c.LLVMGetComdat(ref) != __null;
+    }
+
     ## Sets whether a global's address is significant: 0 for none, 1 for
     ## `local_unnamed_addr`, 2 for `unnamed_addr`.
     ##
