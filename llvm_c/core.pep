@@ -955,6 +955,12 @@ export extern void* LLVMGetLastInstruction(void* block);
 ## @returns the next instruction or null
 export extern void* LLVMGetNextInstruction(void* instruction);
 
+## Returns the instruction before `instruction`, or null.
+##
+## @param instruction the instruction
+## @returns the previous instruction or null
+export extern void* LLVMGetPreviousInstruction(void* instruction);
+
 ## Returns an instruction's opcode (`LLVMOpcode`).
 ##
 ## @param instruction the instruction
@@ -1054,6 +1060,12 @@ export extern void LLVMSetVisibility(void* global, int visibility);
 ## @param value the value
 ## @returns the use or null
 export extern void* LLVMGetFirstUse(void* value);
+
+## Makes every use of `old` a use of `replacement`, of the same type.
+##
+## @param old the value whose uses change
+## @param replacement the value they use instead
+export extern void LLVMReplaceAllUsesWith(void* old, void* replacement);
 
 ## Sets whether a global's address is significant (`LLVMUnnamedAddr`).
 ##

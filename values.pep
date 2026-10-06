@@ -554,7 +554,34 @@ export struct Value {
     ## Turns a function definition into a declaration: deletes its blocks,
     ## personality and debug subprogram, and makes it external.
     delete_body() {
+        # A block can be used by a branch in another block, and an
+        # instruction by an instruction in another block, so deleting the
+        # blocks one by one would leave uses of what is gone: LLVM's
+        # `deleteBody` drops every reference first. Here each used
+        # instruction's uses become poison, then the instructions go, and
+        # last the blocks, which nothing uses by then.
         var block = llvm_c.LLVMGetFirstBasicBlock(ref);
+        while (block != __null) {
+            var instruction = llvm_c.LLVMGetFirstInstruction(block);
+            while (instruction != __null) {
+                if (llvm_c.LLVMGetFirstUse(instruction) != __null) {
+                    llvm_c.LLVMReplaceAllUsesWith(instruction, llvm_c.LLVMGetPoison(llvm_c.LLVMTypeOf(instruction)));
+                }
+                instruction = llvm_c.LLVMGetNextInstruction(instruction);
+            }
+            block = llvm_c.LLVMGetNextBasicBlock(block);
+        }
+        block = llvm_c.LLVMGetFirstBasicBlock(ref);
+        while (block != __null) {
+            var instruction = llvm_c.LLVMGetLastInstruction(block);
+            while (instruction != __null) {
+                var previous = llvm_c.LLVMGetPreviousInstruction(instruction);
+                llvm_c.LLVMInstructionEraseFromParent(instruction);
+                instruction = previous;
+            }
+            block = llvm_c.LLVMGetNextBasicBlock(block);
+        }
+        block = llvm_c.LLVMGetFirstBasicBlock(ref);
         while (block != __null) {
             var next = llvm_c.LLVMGetNextBasicBlock(block);
             llvm_c.LLVMDeleteBasicBlock(block);

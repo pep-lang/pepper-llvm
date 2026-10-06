@@ -172,6 +172,33 @@ bitcode_reads_back_and_a_clone_keeps_one_body() {
 }
 
 [Test]
+a_body_whose_blocks_use_each_other_is_deleted_cleanly() {
+    # `sum` is made in `entry` and used in `done`, and `done` is a branch
+    # target: deleting `entry` first must not leave either use behind.
+    var context = llvm.Context();
+    var module = llvm.Module(context, "uses");
+    var i32 = context.int32_type();
+    var function = module.add_function("twice", llvm.Type.function(i32, [i32]));
+    var entry = context.append_block(function, "entry");
+    var done = context.append_block(function, "done");
+    var builder = llvm.Builder(context);
+    builder.position_at_end(entry);
+    var sum = builder.add(function.param(0), function.param(0), "sum");
+    builder.branch(done);
+    builder.position_at_end(done);
+    var result = builder.phi(i32, "result");
+    result.add_incoming([sum], [entry]);
+    builder.return_value(result);
+    build_max(context, module);
+    expect_true(module.verify().is_ok());
+    function.delete_body();
+    module.function("max").value().delete_body();
+    expect_true(function.is_declaration());
+    expect_true(module.verify().is_ok());
+    expect_true(module.to_string().contains("declare i32 @twice(i32)"));
+}
+
+[Test]
 a_block_without_a_terminator_fails_verification() {
     var context = llvm.Context();
     var broken = llvm.Module(context, "broken");
