@@ -560,6 +560,13 @@ export struct Value {
         # `deleteBody` drops every reference first. Here each used
         # instruction's uses become poison, then the instructions go, and
         # last the blocks, which nothing uses by then.
+        #
+        # Erasing an instruction moves its debug records to the next one,
+        # or past the block's last into its trailing records, which
+        # deleting the block leaves behind in the context, keyed by the
+        # block's address: a block made later at that address would take
+        # them up. So each block first gets an `unreachable` that the
+        # records move onto and that goes with the block.
         var block = llvm_c.LLVMGetFirstBasicBlock(ref);
         while (block != __null) {
             var instruction = llvm_c.LLVMGetFirstInstruction(block);
@@ -571,9 +578,12 @@ export struct Value {
             }
             block = llvm_c.LLVMGetNextBasicBlock(block);
         }
+        var builder = llvm_c.LLVMCreateBuilderInContext(llvm_c.LLVMGetModuleContext(llvm_c.LLVMGetGlobalParent(ref)));
         block = llvm_c.LLVMGetFirstBasicBlock(ref);
         while (block != __null) {
-            var instruction = llvm_c.LLVMGetLastInstruction(block);
+            llvm_c.LLVMPositionBuilderAtEnd(builder, block);
+            var end = llvm_c.LLVMBuildUnreachable(builder);
+            var instruction = llvm_c.LLVMGetPreviousInstruction(end);
             while (instruction != __null) {
                 var previous = llvm_c.LLVMGetPreviousInstruction(instruction);
                 llvm_c.LLVMInstructionEraseFromParent(instruction);
@@ -581,6 +591,7 @@ export struct Value {
             }
             block = llvm_c.LLVMGetNextBasicBlock(block);
         }
+        llvm_c.LLVMDisposeBuilder(builder);
         block = llvm_c.LLVMGetFirstBasicBlock(ref);
         while (block != __null) {
             var next = llvm_c.LLVMGetNextBasicBlock(block);

@@ -83,3 +83,51 @@ functions_carry_debug_info() {
     var assembly = String._from_bytes(machine.emit_to_memory(module, llvm.FileKind.Assembly).value());
     expect_true(assembly.contains(".debug_info") || assembly.contains("__debug_info") || assembly.contains(".debug$S"));
 }
+
+# `name(int value)`, which stores `value` and declares it at line `line`.
+_add_described(context: llvm.Context, module: llvm.Module, debug: llvm.DebugBuilder, unit: llvm.Metadata, file: llvm.Metadata, int_type: llvm.Metadata, name: String, line: uint): llvm.Value {
+    var i32 = context.int32_type();
+    var function = module.add_function(name, llvm.Type.function(i32, [i32]));
+    var info = debug.function(unit, name, file, line, debug.subroutine_type(file, int_type, [int_type]));
+    function.set_subprogram(info);
+    var entry = context.append_block(function, "entry");
+    var builder = llvm.Builder(context);
+    builder.position_at_end(entry);
+    builder.set_location(debug.location(line, 1, info));
+    var slot = builder.alloca(i32, "value.address");
+    builder.store(function.param(0), slot);
+    debug.declare(slot, debug.parameter_variable(info, "value", 1, file, line, int_type), debug.location(line, 1, info), entry);
+    builder.return_value(builder.load(i32, slot, "value"));
+    return function;
+}
+
+[Test]
+deleting_a_body_leaves_no_debug_records_behind() {
+    # A deleted body's `#dbg_declare`s must go with it: left in the
+    # context, a block made later (a copy's, here) took them up, putting
+    # another function's parameter in its function (#835 in pepper).
+    var context = llvm.Context();
+    var module = llvm.Module(context, "split");
+    var debug = llvm.DebugBuilder(module);
+    var file = debug.file("split.pep", "/src");
+    var unit = debug.compile_unit(file, "pepper-llvm test", llvm.DwarfLanguage.C);
+    var int_type = debug.basic_type("int", 32, llvm.DwarfEncoding.Signed);
+    var functions = Array<llvm.Value>();
+    for (var i in 0..8) {
+        functions.append(_add_described(context, module, debug, unit, file, int_type, $"f{i}", i as uint + 1));
+    }
+    debug.finalize();
+    expect_true(module.verify().is_ok());
+    for (var i in 0..4) {
+        functions[i].delete_body();
+    }
+    for (var i in 0..4) {
+        var copy = module.clone();
+        var verified = copy.verify();
+        if (verified.is_err()) {
+            print(verified.error().message);
+        }
+        expect_true(verified.is_ok());
+    }
+    expect_true(module.verify().is_ok());
+}

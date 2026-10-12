@@ -51,6 +51,12 @@ export extern void* LLVMCreateEnumAttribute(void* context, uint kind, ulong valu
 ## @returns the new module
 export extern void* LLVMModuleCreateWithNameInContext(char* name, void* context);
 
+## Returns the context that owns a module's types.
+##
+## @param module the module
+## @returns the context
+export extern void* LLVMGetModuleContext(void* module);
+
 ## Destroys a module and the functions and globals in it.
 ##
 ## @param module the module to destroy
