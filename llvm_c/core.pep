@@ -173,6 +173,13 @@ export extern int LLVMParseBitcodeInContext2(void* context, void* buffer, void**
 ## @returns the copy
 export extern void* LLVMCloneModule(void* module);
 
+## Links `source` into `destination` and disposes of `source`.
+##
+## @param destination the module linked into
+## @param source the module linked in, disposed of
+## @returns nonzero when the two do not link
+export extern int LLVMLinkModules2(void* destination, void* source);
+
 ## Reports whether a function or global variable is only declared.
 ##
 ## @param global the function or global variable

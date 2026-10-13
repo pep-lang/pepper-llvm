@@ -87,6 +87,20 @@ export struct Module {
         return Module(context, llvm_c.LLVMCloneModule(ref));
     }
 
+    ## Links `source`, a module of the same context, into this one, which
+    ## then holds what `source` defined. `source` is used up: it no longer
+    ## owns a module (`is_owned` is false). Linking moves `source`'s
+    ## contents, where linking a `clone()` would copy them first.
+    ##
+    ## @param source the module to link in
+    ## @returns Ok, or an Err when the two do not link (a symbol both define)
+    link(source: Module): Result<void> {
+        if (llvm_c.LLVMLinkModules2(ref, source._handle.detach()) != 0) {
+            return Result<void>.err(Error("the modules do not link"));
+        }
+        return Result<void>.ok();
+    }
+
     ## Returns the module's target triple, or "" when none is set.
     ##
     ## @returns the triple

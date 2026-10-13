@@ -172,6 +172,18 @@ bitcode_reads_back_and_a_clone_keeps_one_body() {
 }
 
 [Test]
+link_moves_a_module_in() {
+    var context = llvm.Context();
+    var program = llvm.Module(context, "program");
+    var part = llvm.Module(context, "part");
+    build_max(context, part);
+    expect_true(program.link(part).is_ok());
+    expect_false(part.is_owned());
+    expect_false(program.function("max").value().is_declaration());
+    expect_true(program.verify().is_ok());
+}
+
+[Test]
 a_body_whose_blocks_use_each_other_is_deleted_cleanly() {
     # `sum` is made in `entry` and used in `done`, and `done` is a branch
     # target: deleting `entry` first must not leave either use behind.
