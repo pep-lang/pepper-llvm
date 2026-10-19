@@ -75,7 +75,10 @@ tests/run.sh path/to/pepper
 
 runs the `[Test]` functions in `tests/` with `pepper test`
 (`llvm_test.pep`, `jit_test.pep`, `debug_info_test.pep`), then the
-factorial example end to end.
+factorial example end to end. `LLVM_LIB` names the folder of the LLVM
+library to link where the table above passes `-L` (on macOS it defaults
+to Homebrew's), and `AR` the archiver for the example's library (`ar`,
+or `llvm-ar` on Windows).
 
 ## Design
 
@@ -117,10 +120,15 @@ then `lookup(name)` returns the function's address to cast to an
 - Debug info covers files, compile units, functions, basic, pointer and
   struct types, lexical blocks, variables and locations; other `DIBuilder`
   calls are addable the same way.
-- A CI workflow. The tests have run on Linux x64 and Windows x64 (on
-  Windows, `pepper test -I packages -L <LLVM>\lib tests`, since
-  `tests/run.sh` passes `-L` only on macOS); macOS linking follows the
-  table above but is untested.
+
+## Releasing
+
+CI (`.github/workflows/ci.yml`) runs the tests on Linux, macOS and
+Windows for every push to `main` and every pull request. To release, set
+`version` in `pep.toml`, merge, then push the matching tag
+(`git tag v1.0.0 && git push origin v1.0.0`): CI tests the tag and
+publishes a GitHub release for it. `pepper package add` and `pepper
+package update` find versions by their tags.
 
 ## License
 
