@@ -2,5 +2,5 @@
 name = "llvm"
 version = "0.1.0"
 description = "LLVM 20 C API bindings: build IR, optimize it, emit object files, JIT"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/justinboswell/pepper-llvm"
