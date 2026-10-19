@@ -387,8 +387,21 @@ export extern void LLVMSetLinkage(void* global, int linkage);
 ## @param global the global variable
 ## @param value the constant
 export extern void LLVMSetInitializer(void* global, void* value);
+## Returns a global variable's initial value.
+##
+## @param global the global variable
+## @returns the constant, or null when it has none
 export extern void* LLVMGetInitializer(void* global);
+
+## Deletes a global variable from its module.
+##
+## @param global the global variable
 export extern void LLVMDeleteGlobal(void* global);
+
+## Sets the object-file section a global is placed in.
+##
+## @param global the global variable or function
+## @param section the section's name, NUL-terminated
 export extern void LLVMSetSection(void* global, char* section);
 
 ## Marks a global variable constant.

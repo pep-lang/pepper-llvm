@@ -176,6 +176,10 @@ export struct TargetMachine {
     var _handle: Handle<__ptr<void>>;
     var _data: Handle<__ptr<void>>;
 
+    ## Wraps a target machine made through LLVM-C, which it then owns: it
+    ## is disposed when the last reference goes away.
+    ##
+    ## @param ref the `LLVMTargetMachineRef`
     construct(ref: __ptr<void>) {
         _handle = Handle<__ptr<void>>(ref, (machine) => llvm_c.LLVMDisposeTargetMachine(machine));
         _data = Handle<__ptr<void>>(
