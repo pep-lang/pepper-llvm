@@ -1,6 +1,6 @@
 # pepper-llvm
 
-LLVM C API bindings for [Pepper](https://github.com/justinboswell/pepper),
+LLVM C API bindings for [Pepper](https://github.com/pep-lang/pepper),
 so a compiler written in Pepper can build LLVM IR, optimize it and emit
 object files.
 
@@ -46,7 +46,7 @@ Add it to a project's `pep.toml`:
 
 ```toml
 [dependencies]
-llvm = { github = "justinboswell/pepper-llvm", branch = "main" }
+llvm = { github = "pep-lang/pepper-llvm", branch = "main" }
 ```
 
 ```pepper
