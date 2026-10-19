@@ -1,8 +1,8 @@
 # pepper-llvm
 
-LLVM C API bindings for [Pepper](https://github.com/justinboswell/pepper)
-(issue justinboswell/pepper#249), so a compiler written in Pepper can build
-LLVM IR, optimize it and emit object files.
+LLVM C API bindings for [Pepper](https://github.com/justinboswell/pepper),
+so a compiler written in Pepper can build LLVM IR, optimize it and emit
+object files.
 
 Two modules:
 
@@ -67,9 +67,6 @@ builds with:
 | macOS | Homebrew's `libLLVM.dylib` | `brew install llvm@20`, then pass `-L $(brew --prefix llvm@20)/lib` |
 | Windows | `LLVM-C.dll` | pass `-L <LLVM>\lib` (for `LLVM-C.lib`), and keep `<LLVM>\bin` on `PATH` to run |
 
-`-L` needs a Pepper compiler with justinboswell/pepper#371, which also adds
-the `Handle<T>` the wrappers are built on.
-
 ## Tests
 
 ```sh
@@ -80,7 +77,7 @@ runs the `[Test]` functions in `tests/` with `pepper test`
 (`llvm_test.pep`, `jit_test.pep`, `debug_info_test.pep`), then the
 factorial example end to end.
 
-## Decisions (from the open questions in #249)
+## Design
 
 - **Hand-written**, not generated from the headers: only what a compiler
   needs, with the rest addable one `extern` at a time.
@@ -120,5 +117,11 @@ then `lookup(name)` returns the function's address to cast to an
 - Debug info covers files, compile units, functions, basic, pointer and
   struct types, lexical blocks, variables and locations; other `DIBuilder`
   calls are addable the same way.
-- A CI workflow. So far the tests have run on Linux x64 only; macOS and
-  Windows linking follow the table above but are untested.
+- A CI workflow. The tests have run on Linux x64 and Windows x64 (on
+  Windows, `pepper test -I packages -L <LLVM>\lib tests`, since
+  `tests/run.sh` passes `-L` only on macOS); macOS linking follows the
+  table above but is untested.
+
+## License
+
+Apache-2.0; see [LICENSE](LICENSE).

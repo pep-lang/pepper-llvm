@@ -19,7 +19,7 @@ export struct Type {
 
     ## Wraps an LLVM-C type handle.
     ##
-    ## @param ref the `LLVMTypeRef`, or null
+    ## @param this.ref the `LLVMTypeRef`, or null
     construct(this.ref = __null) {}
 
     ## Returns a function type.
@@ -248,6 +248,8 @@ export struct Type {
     }
 
     ## Returns whether a function type takes variadic arguments.
+    ##
+    ## @returns true when it takes C variadic arguments
     is_variadic(): bool {
         return llvm_c.LLVMIsFunctionVarArg(ref) != 0;
     }
@@ -262,7 +264,7 @@ export struct Value {
 
     ## Wraps an LLVM-C value handle.
     ##
-    ## @param ref the `LLVMValueRef`, or null
+    ## @param this.ref the `LLVMValueRef`, or null
     construct(this.ref = __null) {}
 
     ## Reports whether this is the null handle.
@@ -747,21 +749,29 @@ export struct Value {
     }
 
     ## Returns how many operands this user has.
+    ##
+    ## @returns the operand count
     operand_count(): uint {
         return llvm_c.LLVMGetNumOperands(ref) as uint;
     }
 
     ## Returns whether the value is an instruction.
+    ##
+    ## @returns true for an instruction
     is_instruction(): bool {
         return llvm_c.LLVMIsAInstruction(ref) != __null;
     }
 
     ## Returns the source element type of a `getelementptr`.
+    ##
+    ## @returns the element type its indices step through
     gep_source_type(): Type {
         return Type(llvm_c.LLVMGetGEPSourceElementType(ref));
     }
 
     ## Returns the function's intrinsic ID, or 0 when it is no intrinsic.
+    ##
+    ## @returns the intrinsic ID, or 0
     intrinsic_id(): uint {
         return llvm_c.LLVMGetIntrinsicID(ref);
     }
@@ -794,7 +804,7 @@ export struct Metadata {
 
     ## Wraps an LLVM-C metadata handle.
     ##
-    ## @param ref the `LLVMMetadataRef`, or null
+    ## @param this.ref the `LLVMMetadataRef`, or null
     construct(this.ref = __null) {}
 
     ## Reports whether this is the null handle.
@@ -814,7 +824,7 @@ export struct BasicBlock {
 
     ## Wraps an LLVM-C basic block handle.
     ##
-    ## @param ref the `LLVMBasicBlockRef`, or null
+    ## @param this.ref the `LLVMBasicBlockRef`, or null
     construct(this.ref = __null) {}
 
     ## Reports whether this is the null handle.
@@ -892,7 +902,7 @@ export struct Attribute {
 
     ## Wraps an LLVM-C attribute handle.
     ##
-    ## @param ref the `LLVMAttributeRef`
+    ## @param this.ref the `LLVMAttributeRef`
     construct(this.ref = __null) {}
 }
 

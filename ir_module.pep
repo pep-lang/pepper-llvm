@@ -33,6 +33,11 @@ export struct Module {
         );
     }
 
+    ## Wraps a module made through LLVM-C, which it then owns: it is
+    ## disposed when the last reference goes away.
+    ##
+    ## @param context the context `ref` was made in
+    ## @param ref the `LLVMModuleRef`
     construct(context: Context, ref: __ptr<void>) {
         this.context = context;
         _handle = Handle<__ptr<void>>(ref, (module) => llvm_c.LLVMDisposeModule(module));
