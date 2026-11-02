@@ -283,3 +283,17 @@ the_library_reports_its_version_and_triple() {
     expect_equal(llvm.version().split(".").count, 3 as ulong);
     expect_true(llvm.default_triple().size > 0);
 }
+
+[Test]
+type_attributes_print_with_their_type() {
+    var context = llvm.Context();
+    var module = llvm.Module(context, "test");
+    var point = context.named_struct_type("Point");
+    point.set_body([context.int64_type(), context.int64_type(), context.int64_type()]);
+    var pointer = context.pointer_type();
+    var make = module.add_function("make", llvm.Type.function(context.void_type(), [pointer, pointer]));
+    make.add_param_attribute(0, context.type_attribute("sret", point));
+    make.add_param_attribute(1, context.type_attribute("byval", point));
+    var text = module.to_string();
+    expect_true(text.contains("declare void @make(ptr sret(%Point), ptr byval(%Point))"));
+}

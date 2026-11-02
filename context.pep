@@ -184,6 +184,20 @@ export struct Context {
         return Attribute(llvm_c.LLVMCreateEnumAttribute(ref, kind, value));
     }
 
+    ## Returns a type attribute by its IR name, such as `sret(%Point)` or
+    ## `byval(%Point)`: the attributes the C calling conventions use for a
+    ## struct returned through a hidden pointer or passed on the stack.
+    ##
+    ## @param name the attribute's name
+    ## @param ty the attribute's type
+    ## @returns the attribute
+    ## @panics if LLVM has no attribute named `name`
+    type_attribute(name: String, ty: Type): Attribute {
+        var kind = llvm_c.LLVMGetEnumAttributeKindForName(_c_string(name), name.size);
+        assert(kind != 0, $"Context.type_attribute: no attribute named '{name}'");
+        return Attribute(llvm_c.LLVMCreateTypeAttribute(ref, kind, ty.ref));
+    }
+
     ## Returns a string attribute (`"key"="value"`), such as `target-cpu`.
     ##
     ## @param key the attribute's key
