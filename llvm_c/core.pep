@@ -42,6 +42,15 @@ export extern uint LLVMGetEnumAttributeKindForName(char* name, ulong length);
 ## @returns the attribute
 export extern void* LLVMCreateEnumAttribute(void* context, uint kind, ulong value);
 
+## Creates a type attribute (one whose value is a type), such as `sret` or
+## `byval`.
+##
+## @param context the context that owns the attribute
+## @param kind the kind from `LLVMGetEnumAttributeKindForName`
+## @param ty the attribute's type
+## @returns the attribute
+export extern void* LLVMCreateTypeAttribute(void* context, uint kind, void* ty);
+
 # Modules
 
 ## Creates an empty module in `context`.
